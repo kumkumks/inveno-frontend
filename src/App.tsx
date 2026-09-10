@@ -1,22 +1,14 @@
-import { Button } from "@/components/ui/button"
-import Landingpage from "./pages/landingpage/landingpage"
+import React from 'react'
+import { Route,Routes } from 'react-router-dom'
+import Landingpage from './pages/landingpage/landingpage'
+import Pages404 from './commons/pages/pages404/Pages404'
 
-export function App() {
+const App = () => {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <Landingpage />
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <Routes>
+      <Route path='/' element={<Landingpage/>} />
+      <Route path='/error' element={<Pages404/>} />
+    </Routes>
   )
 }
 

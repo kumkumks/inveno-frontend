@@ -1,6 +1,12 @@
 import React from 'react';
 import {getHealth} from './health';
 
+type HealthContextType = {
+    data: any |null;
+    loading: boolean;
+    error: any|null;
+};
+
 export const useHealth = () => {
     const [data, setData] = React.useState(null);
     const [loading, setLoading] = React.useState(true);
@@ -14,7 +20,9 @@ export const useHealth = () => {
             } catch (error: any) {
                 setError(error);
             } finally {
-                setLoading(false);
+                setTimeout(()=>{
+                 setLoading(false);
+                },1000)
             }   
         };  
         fetchData();
