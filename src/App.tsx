@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Landingpage from "./pages/landingpage/landingpage"
 
 export function App() {
   return (
@@ -10,6 +11,7 @@ export function App() {
           <p>We&apos;ve already added the button component for you.</p>
           <Button className="mt-2">Button</Button>
         </div>
+        <Landingpage />
         <div className="font-mono text-xs text-muted-foreground">
           (Press <kbd>d</kbd> to toggle dark mode)
         </div>
