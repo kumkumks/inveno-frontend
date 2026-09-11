@@ -1,5 +1,5 @@
 import axios from 'axios';
-import api from '../../../commons/services/api';
+import api from '../../../services/api';
 
 
 export const getHealth = async () => {

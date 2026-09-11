@@ -1,12 +1,15 @@
-import {useHealth} from './api/hooks';
+import {useHealth} from './healthapi/hooks';
+import React from 'react';
 import {useNavigate} from 'react-router-dom';
 
 const Landingpage = () => {
     const{data, loading, error} = useHealth();
     const navigate = useNavigate();
-    if(error){
-        navigate('/error');
-    }
+    React.useEffect(()=>{
+        if(error){
+            navigate('/error');
+        }
+    }, [error, navigate]);
 
   return (
     <div>

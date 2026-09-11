@@ -1,7 +1,7 @@
 import React from 'react'
 import { Route,Routes } from 'react-router-dom'
 import Landingpage from './pages/landingpage/landingpage'
-import Pages404 from './commons/pages/pages404/Pages404'
+import Pages404 from './Pages404'
 
 const App = () => {
   return (
