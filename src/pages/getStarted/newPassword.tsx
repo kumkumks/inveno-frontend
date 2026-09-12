@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams,useNavigate } from 'react-router-dom';
 import api from '@/services/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { z } from 'zod';
 type FormData = z.infer<typeof newPasswordSchema>;
 
 const NewPassword = () => {
-
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const uid = searchParams.get('uid');
@@ -39,6 +39,7 @@ const NewPassword = () => {
             });
             console.log('Password set successful:', response.data);
             console.log(response);
+            navigate('/login'); // Navigate to the login page after successful submission
             reset(); // Reset the form after successful submission
         } catch (error: any) {
             const backendErrors = error.response?.data;
