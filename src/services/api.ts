@@ -5,4 +5,14 @@ const api = axios.create({
   timeout: 10000, // Set a timeout for requests (in milliseconds)
 });
 
+api.interceptors.request.use(
+  (config) => {
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export default api;

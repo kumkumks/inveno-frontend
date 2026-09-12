@@ -7,7 +7,7 @@ const Pages404 = () => {
   return (
     <div>
         <p>{error ? `Server Error: ${error} ` : 'loading...'}</p>
-        <button>Refresh</button>
+        <button onClick={() => window.location.reload()}>Refresh</button>
     </div>
   )
 }
