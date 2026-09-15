@@ -3,18 +3,19 @@ import { Button } from '@/components/ui/button'
 import sideimage from '@/assets/login-img.svg'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import api from '@/services/api'
+import { useAuth } from '@/components/auth-provider'
 import { LoginSchema } from './Schema/schema'
 import { zodResolver } from '@hookform/resolvers/zod/dist/zod.js'
 import { useForm } from 'react-hook-form'
 
 
 const loginPage = () => {
-   
 const navigate = useNavigate();
+const { signIn } = useAuth();
 type LoginForm = z.infer<typeof LoginSchema>;
   const { register, handleSubmit, reset, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(LoginSchema),
+    mode:'onBlur',
     defaultValues: {
         email: '',
         password: '',
@@ -23,14 +24,10 @@ type LoginForm = z.infer<typeof LoginSchema>;
  
 const handleLogin = async (data: LoginForm) => {
     try{
-        const response = await api.post('/api/auth/login/', {
-            email: data.email,
-            password: data.password,
-        });
-        console.log('Login successful:', response.data);
+        await signIn(data.email, data.password);
         navigate('/dashboard');
-        reset(); // Reset the form after successful login
-    } catch (error:any) {
+        reset();
+    } catch (error: any) {
         console.error('Error during login:', error);
         const backendErrors = error.response?.data;
 
