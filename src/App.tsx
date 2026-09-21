@@ -6,6 +6,7 @@ import GetStarted from './pages/getStarted/getStarted'
 import Login from './pages/loginPage/loginPage'
 import Dashboard from './pages/dashboard/dashboard'
 import { ProtectedRoute } from './components/protected-route'
+import DashboardLayout from './layout/layout'
 
 const App = () => {
   return (
@@ -15,7 +16,9 @@ const App = () => {
       <Route path='/error' element={<Pages404/>} />
       <Route path='/login' element={<Login/>} />
       <Route element={<ProtectedRoute />}>
-        <Route path='/dashboard' element={<Dashboard/>} />
+        <Route element={<DashboardLayout />}>
+          <Route path='/dashboard' element={<Dashboard/>} />
+        </Route>
       </Route>
     </Routes>
   )

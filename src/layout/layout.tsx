@@ -9,8 +9,8 @@ import {
   Sheet,
   SheetContent
 } from '../components/ui/sheet'
-import { Outlet, Link } from 'react-router-dom'
-import { Home, BarChart3, Clock, Activity, Package, Layers, Box, Warehouse, MapPin, Users, ChevronDown, type LucideIcon } from 'lucide-react'
+import { Outlet, NavLink } from 'react-router-dom'
+import { Home, Package, Warehouse, MapPin, Users } from 'lucide-react'
 
 const sidebarMenus = [
   {
@@ -74,12 +74,7 @@ const sheetOverlayStyles = `
 `
 
 const DashboardLayout = () => {
-  const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({})
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
-
-  const toggleMenu = (key: string) => {
-    setOpenMenus(prev => ({ ...prev, [key]: !prev[key] }))
-  }
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -101,10 +96,20 @@ const DashboardLayout = () => {
           sidebarMenus.map((menu)=>(
             <div key={menu.key}>
             {/* Menu button */}
-            <Link to={menu.href} className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors'>
+            <NavLink
+              to={menu.href}
+              onClick={closeMobileMenu}
+              className={({ isActive }) =>
+                `flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                }`
+              }
+            >
               <menu.icon className='h-4 w-4 text-gray-400' />
               <span className='font-normal'>{menu.label}</span>
-            </Link>
+            </NavLink>
           </div>
           ))
         }
@@ -126,12 +131,14 @@ const DashboardLayout = () => {
       {/* Main Content Area with Sidebar */}
       <SidebarProvider className='flex-1 min-h-0 overflow-hidden'>
         <div className='flex flex-1 min-h-0 relative'>
-          {/* Desktop Sidebar - Fixed position, stays in place */}
-          <Sidebar collapsible="none" className='hidden lg:flex border-r border-gray-200 bg-white h-full w-[280px] flex-shrink-0 sticky top-0'>
-            <SidebarContent className='bg-white h-full overflow-hidden flex flex-col w-full'>
-              <SidebarMenuContent />
-            </SidebarContent>
-          </Sidebar>
+          {/* Desktop Sidebar - stays visible beside the page content */}
+          <aside className='hidden md:flex h-full w-[280px] shrink-0 border-r border-gray-200 bg-white'>
+            <Sidebar collapsible="none" className='h-full w-full bg-white'>
+              <SidebarContent className='bg-white h-full overflow-hidden flex flex-col w-full'>
+                <SidebarMenuContent />
+              </SidebarContent>
+            </Sidebar>
+          </aside>
 
           {/* Mobile Sidebar Sheet */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>

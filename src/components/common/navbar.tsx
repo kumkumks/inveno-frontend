@@ -1,5 +1,5 @@
 import React from 'react'
-import Logo from '../../assets/logo.svg'
+import Logo from '../../assets/logo.png'
 import profile from '../../assets/login-img.svg'
 import { Menu } from 'lucide-react'
 
@@ -14,12 +14,12 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           {/* Mobile Menu Button */}
           <button 
             onClick={onMenuClick}
-            className='lg:hidden p-2 hover:bg-gray-100 rounded-md transition-colors flex items-center justify-center'
+            className='md:hidden p-2 hover:bg-gray-100 rounded-md transition-colors flex items-center justify-center'
             aria-label="Toggle menu"
           >
             <Menu className='h-5 w-5 text-gray-600' />
           </button>
-          <img src={Logo} alt="Inveno" className='w-17' />
+          <img src={Logo} alt="Inveno" className='h-8 w-auto' />
         </div>
         <div className='flex items-center'>
           <div className='flex items-center justify-center w-9 h-9 rounded-full overflow-hidden border border-gray-200 shadow-sm'>
