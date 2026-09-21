@@ -19,7 +19,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
           >
             <Menu className='h-5 w-5 text-gray-600' />
           </button>
-          <img src={Logo} alt="Inveno" className='h-8 w-auto' />
+          <img src={Logo} alt="Inveno" className='h-3.5 w-auto sm:h-4 md:h-4.5' />
         </div>
         <div className='flex items-center'>
           <div className='flex items-center justify-center w-9 h-9 rounded-full overflow-hidden border border-gray-200 shadow-sm'>
