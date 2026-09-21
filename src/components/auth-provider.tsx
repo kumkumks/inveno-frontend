@@ -1,51 +1,97 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { getCurrentUser, login, logout, type AuthUser, type UserRole } from '@/services/auth';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { getMe, login as apiLogin, logout as apiLogout, silentRefresh } from '@/services/auth';
+import { clearAccessToken, getAccessToken } from '@/lib/auth';
+import type { MeResponse, UserType } from '@/lib/types';
 
 interface AuthContextValue {
-  user: AuthUser | null;
+  me: MeResponse | null;
+  user: MeResponse | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<AuthUser>;
+  ready: boolean;
+  signIn: (email: string, password: string) => Promise<MeResponse>;
+  login: (email: string, password: string) => Promise<MeResponse>;
   signOut: () => Promise<void>;
-  hasRole: (roles: UserRole | UserRole[]) => boolean;
+  logout: () => Promise<void>;
+  refreshMe: () => Promise<void>;
+  hasRole: (roles: UserType | UserType[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    getCurrentUser()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+  const refreshMe = useCallback(async () => {
+    const profile = await getMe();
+    setMe(profile);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const authenticatedUser = await login(email, password);
-    setUser(authenticatedUser);
-    return authenticatedUser;
-  };
+  useEffect(() => {
+    void (async () => {
+      try {
+        if (!getAccessToken()) await silentRefresh();
+        await refreshMe();
+      } catch {
+        clearAccessToken();
+        setMe(null);
+      } finally {
+        setReady(true);
+      }
+    })();
+  }, [refreshMe]);
 
-  const signOut = async () => {
-    try {
-      await logout();
-    } finally {
-      setUser(null);
-    }
-  };
-
-  const hasRole = (roles: UserRole | UserRole[]) => {
-    if (!user) return false;
-    return (Array.isArray(roles) ? roles : [roles]).includes(user.role);
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signOut, hasRole }}>
-      {children}
-    </AuthContext.Provider>
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const profile = await apiLogin(email, password);
+      setMe(profile);
+      return profile;
+    },
+    [],
   );
+
+  const logout = useCallback(async () => {
+    try {
+      await apiLogout();
+    } finally {
+      setMe(null);
+    }
+  }, []);
+
+  const hasRole = useCallback(
+    (roles: UserType | UserType[]) => {
+      const role = me?.profile?.user_type;
+      if (!role) return false;
+      return (Array.isArray(roles) ? roles : [roles]).includes(role);
+    },
+    [me],
+  );
+
+  const value = useMemo(
+    () => ({
+      me,
+      user: me,
+      isLoading: !ready,
+      ready,
+      signIn: login,
+      login,
+      signOut: logout,
+      logout,
+      refreshMe,
+      hasRole,
+    }),
+    [me, ready, login, logout, refreshMe, hasRole],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

@@ -1,51 +1,34 @@
 import api from './api';
+import { clearAccessToken, setAccessToken } from '@/lib/auth';
+import type { AccessTokenResponse, MeResponse, UserType } from '@/lib/types';
 
-export type UserRole = 'admin' | 'staff' | 'user' | string;
+export type { MeResponse, UserType };
+export type UserRole = UserType;
 
-export interface AuthUser {
-  id: string | number;
-  email: string;   
-  role: UserRole;
-  name?: string;
-}
-
-interface AuthResponse {
-  user?: AuthUser;
-  id?: string | number;
-  email?: string;
-  role?: UserRole;
-  name?: string;
-}
-
-const toUser = (response: AuthResponse): AuthUser => {
-  const user = response.user ?? response;
-
-  if (!user.id || !user.email || !user.role) {
-    throw new Error('The server returned an invalid authentication response.');
-  }
-
-  return {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    name: user.name,
-  };
-};
-
-export const login = async (email: string, password: string) => {
-  const { data } = await api.post<AuthResponse>('/api/auth/login/', {
+export async function login(email: string, password: string) {
+  const { data } = await api.post<AccessTokenResponse>('/api/auth/login/', {
     email,
     password,
   });
+  setAccessToken(data.access);
+  return getMe();
+}
 
-  return toUser(data);
-};
+export async function silentRefresh() {
+  const { data } = await api.post<AccessTokenResponse>('/api/auth/token/refresh/', {});
+  setAccessToken(data.access);
+  return data;
+}
 
-export const getCurrentUser = async () => {
-  const { data } = await api.get<AuthResponse>('/api/auth/me/');
-  return toUser(data);
-};
+export async function getMe() {
+  const { data } = await api.get<MeResponse>('/api/auth/me/');
+  return data;
+}
 
-export const logout = async () => {
-  await api.post('/api/auth/logout/');
-};
+export async function logout() {
+  try {
+    await api.post('/api/auth/logout/');
+  } finally {
+    clearAccessToken();
+  }
+}
