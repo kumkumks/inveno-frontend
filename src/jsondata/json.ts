@@ -1,0 +1,69 @@
+  
+  export const statsData = [
+    {
+      id: 1,
+      title: 'Total Items',
+      value: 10,
+      description: 'Total Items',
+    },
+    {
+      id: 2,
+      title: 'Low Stock Items',
+      value: 2,
+      description: 'Low Stock Items',
+    },
+    {
+      id: 3,
+      title: 'Out of Stock',
+      value: 0,
+      description: 'Out of Stock',
+    },
+    {
+      id: 4,
+      title: 'Total Stock Value',
+      value: '$1000',
+      description: 'Total Stock Value',
+    },
+  ]
+  
+  export const recentlyAddedData = [
+    {
+      id: 1,
+      title: 'Product 1',
+      image: 'https://i.pinimg.com/1200x/05/b6/d6/05b6d6e7eaf61e1e6d20bab1278237df.jpg',
+      description: 'Product 1 description',
+    },
+    {
+      id: 2,
+      title: 'Product 2',
+      image: 'https://i.pinimg.com/1200x/05/b6/d6/05b6d6e7eaf61e1e6d20bab1278237df.jpg',
+      description: 'Product 2 description',
+    },
+    {
+      id: 3,
+      title: 'Product 3',
+      image: 'https://i.pinimg.com/1200x/05/b6/d6/05b6d6e7eaf61e1e6d20bab1278237df.jpg',
+      description: 'Product 3 description',
+    },
+    {
+      id: 4,
+      title: 'Product 4',
+      image: 'https://i.pinimg.com/1200x/05/b6/d6/05b6d6e7eaf61e1e6d20bab1278237df.jpg',
+      description: 'Product 4 description',
+    },
+  ]
+  
+  export const alertdata = [
+    {
+      id: 1,
+      title: 'Error',
+      icon: "alert-circle",
+      description: 'There was an error processing your request. Please try again.',
+    },
+    {
+      id: 2,
+      title: 'Error',
+      icon: "truck",
+      description: 'There was an error processing your request. Please try again.',
+    },
+  ]
