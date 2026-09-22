@@ -24,7 +24,7 @@ const sidebarMenus = [
     key: "items",
     label: "Items",
     icon: Package,
-    href: "/items",
+    href: "/items-list",
   },
 
   {
@@ -86,9 +86,9 @@ const DashboardLayout = () => {
 
   // Sidebar Content Component (reusable for both desktop and mobile)
   const SidebarMenuContent = () => (
-    <div className='bg-white h-full overflow-y-auto sidebar-scroll'>
-      <div className='bg-white pt-4 pb-6'>
-        <div className='text-[10px] font-medium text-gray-400 px-6 py-2 bg-white uppercase tracking-wider'>
+    <div className='bg-[#fafafa] h-full overflow-y-auto sidebar-scroll'>
+      <div className='bg-[#fafafa] pt-4 pb-6'>
+        <div className='text-[10px] font-medium text-gray-400 px-6 py-2 bg-[#fafafa] uppercase tracking-wider'>
           Platform
         </div>
         <div className='px-3 space-y-0.5'>
@@ -119,12 +119,12 @@ const DashboardLayout = () => {
   )
 
   return (
-    <div className='flex flex-col h-screen w-full bg-white overflow-hidden'>
+    <div className='flex flex-col h-screen w-full bg-[#fafafa] overflow-hidden'>
       {/* Custom styles for sheet overlay */}
       <style dangerouslySetInnerHTML={{ __html: sheetOverlayStyles }} />
       
       {/* Navbar - Always on top with highest z-index */}
-      <div className='sticky top-0 z-[100] w-full bg-white'>
+      <div className='sticky top-0 z-[100] w-full bg-[#fafafa]'>
         <Navbar onMenuClick={toggleMobileMenu} />
       </div>
       
@@ -132,9 +132,9 @@ const DashboardLayout = () => {
       <SidebarProvider className='flex-1 min-h-0 overflow-hidden'>
         <div className='flex min-h-0 min-w-0 flex-1 relative'>
           {/* Desktop Sidebar - stays visible beside the page content */}
-          <aside className='hidden md:flex h-full w-[280px] shrink-0 border-r border-gray-200 bg-white'>
-            <Sidebar collapsible="none" className='h-full w-full bg-white'>
-              <SidebarContent className='bg-white h-full overflow-hidden flex flex-col w-full'>
+          <aside className='hidden md:flex h-full w-[280px] shrink-0 border-r border-gray-200 bg-[#fafafa]'>
+            <Sidebar collapsible="none" className='h-full w-full bg-[#fafafa]'>
+              <SidebarContent className='bg-[#fafafa] h-full overflow-hidden flex flex-col w-full'>
                 <SidebarMenuContent />
               </SidebarContent>
             </Sidebar>
@@ -142,13 +142,13 @@ const DashboardLayout = () => {
 
           {/* Mobile Sidebar Sheet */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetContent side="left" className='w-[280px] p-0 bg-white !top-[65px] !h-[calc(100vh-65px)] overflow-hidden flex flex-col'>
+            <SheetContent side="left" className='w-[280px] p-0 bg-[#fafafa] !top-[65px] !h-[calc(100vh-65px)] overflow-hidden flex flex-col'>
               <SidebarMenuContent />
             </SheetContent>
           </Sheet>
           
           {/* Main Content - Scrollable content area */}
-          <div className='h-full min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#fafafa]'>
+          <div className='h-full min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white'>
             <Outlet />
           </div>
         </div>

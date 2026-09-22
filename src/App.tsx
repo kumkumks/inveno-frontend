@@ -7,6 +7,7 @@ import Login from './pages/loginPage/loginPage'
 import Dashboard from './pages/dashboard/dashboard'
 import { ProtectedRoute } from './components/protected-route'
 import DashboardLayout from './layout/layout'
+import Item_list from './pages/item_list/item_list'
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path='/dashboard' element={<Dashboard/>} />
+          <Route path='/items-list' element={<Item_list/>} />
         </Route>
       </Route>
     </Routes>

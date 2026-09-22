@@ -26,10 +26,10 @@ const Dashboard = () => {
   }, [hash])
 
   return (
-    <div className='flex min-w-0 w-full max-w-full flex-col overflow-x-hidden bg-white px-4 py-4 text-black sm:px-7 sm:py-6'>
+    <div className='flex min-w-0 w-full max-w-full flex-col overflow-x-hidden px-4 py-4  text-black sm:px-7 sm:py-6'>
       {/* Header Section */}
       <section id="stats" className='w-full min-w-0'>
-      <div className="mb-6 flex flex-col items-start justify-between gap-3 border-b border-gray-200 pb-6 sm:mb-8 sm:gap-4 md:flex-row md:items-start">
+      <div className="mb-6 flex flex-col items-start justify-between gap-3 border-b border-gray-400 pb-6 sm:mb-8 sm:gap-4 md:flex-row md:items-start">
         {/* Welcome Message */}
         <div className='min-w-0'>
           <h1 className='h2 text-xl font-normal break-words text-black sm:text-2xl md:text-3xl'>Welcome back, {me?.profile?.full_name}</h1>
@@ -52,7 +52,7 @@ const Dashboard = () => {
       </div>
     
         {/* Stats Cards Section */}
-        <div className="grid w-full min-w-0 grid-cols-2 gap-x-3 gap-y-5 pb-6 border-b border-gray-200 sm:gap-6 lg:grid-cols-4">
+        <div className="grid w-full min-w-0 grid-cols-2 gap-x-3 gap-y-5 pb-6 border-b border-gray-400 sm:gap-6 lg:grid-cols-4">
           {
             statsData.map((item) => (
               <div key={item.id} className='flex min-w-0 max-w-full flex-col items-center px-1'>
@@ -89,7 +89,7 @@ const Dashboard = () => {
                   <CardHeader>
                     <CardTitle className='h4 font-medium text-black'>{item.title}</CardTitle>
                   </CardHeader>
-                  <CardFooter>
+                  <CardFooter className='bg-white'>
                     <Button className="w-full bg-black text-white hover:bg-black/80">View Event</Button>
                   </CardFooter>
                 </Card>
