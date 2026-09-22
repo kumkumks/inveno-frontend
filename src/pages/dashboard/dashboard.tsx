@@ -6,10 +6,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MapPin, Calendar, ArrowRight } from 'lucide-react'
+import { useAuth } from '@/components/auth-provider'
 
 
 const Dashboard = () => {
   const { hash } = useLocation()
+  const { me } = useAuth()
+  const registered_on = new Date(me?.org?.registered_on || '');
+  const registered_on_formatted = registered_on.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // Scroll to the section matching the URL hash (react-router's Link doesn't
   // do this automatically since it only performs client-side navigation).
@@ -22,38 +26,38 @@ const Dashboard = () => {
   }, [hash])
 
   return (
-    <div className='flex flex-col bg-white w-full text-black px-4 sm:px-7 py-4 sm:py-6'>
+    <div className='flex min-w-0 w-full max-w-full flex-col overflow-x-hidden bg-white px-4 py-4 text-black sm:px-7 sm:py-6'>
       {/* Header Section */}
-      <section id="stats">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-4 mb-8 pb-6 border-b border-gray-200">
+      <section id="stats" className='w-full min-w-0'>
+      <div className="mb-6 flex flex-col items-start justify-between gap-3 border-b border-gray-200 pb-6 sm:mb-8 sm:gap-4 md:flex-row md:items-start">
         {/* Welcome Message */}
-        <div>
-          <h1 className='h2 font-normal text-black'>Welcome back, Admin</h1>
+        <div className='min-w-0'>
+          <h1 className='h2 text-xl font-normal break-words text-black sm:text-2xl md:text-3xl'>Welcome back, {me?.profile?.full_name}</h1>
         </div>
 
         {/* Institution Info */}
-        <div className='flex flex-col items-start md:items-end gap-1'>
-          <h3 className='text-sm font-medium text-black paragraph-mini'>SFS GROUP OF INSTITUTIONS</h3>
-          <div className='flex flex-wrap items-center gap-3 text-xs text-gray-600'>
+        <div className='flex min-w-0 flex-col items-start gap-1 md:items-end'>
+          <h3 className='paragraph-mini text-xs font-medium break-words text-black sm:text-sm'>{me?.org?.name}</h3>
+          <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600'>
             <div className='flex items-center gap-1 paragraph-small'>
-              <MapPin size={14} className='text-gray-500' />
-              <span>Hebsagadi, Bangalore</span>
+              <MapPin size={14} className='shrink-0 text-gray-500' />
+              <span>{me?.org?.location}</span>
             </div>
             <div className='flex items-center gap-1 paragraph-small'>
-              <Calendar size={14} className='text-gray-500' />
-              <span>Since Mar 2025</span>
+              <Calendar size={14} className='shrink-0 text-gray-500' />
+              <span>Since {registered_on_formatted}</span>
             </div>
           </div>
         </div>
       </div>
     
         {/* Stats Cards Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-6 border-b border-gray-200">
+        <div className="grid w-full min-w-0 grid-cols-2 gap-x-3 gap-y-5 pb-6 border-b border-gray-200 sm:gap-6 lg:grid-cols-4">
           {
             statsData.map((item) => (
-              <div key={item.id} className='flex min-w-0 flex-col'>
-                <div className=' text-center font-medium text-black mb-1 h3'>{item.value}</div>
-                <div className=' text-gray-600 text-center paragraph break-words'>{item.description}</div>
+              <div key={item.id} className='flex min-w-0 max-w-full flex-col items-center px-1'>
+                <div className='h3 mb-1 text-center text-lg font-medium text-black sm:text-xl md:text-2xl'>{item.value}</div>
+                <div className='paragraph w-full text-center text-[11px] leading-snug text-gray-600 break-words sm:text-sm'>{item.description}</div>
               </div>
             ))
           }
@@ -72,11 +76,11 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* Product Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+          {/* Product Cards — horizontal snap scroll */}
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 [&::-webkit-scrollbar]:hidden">
             {
               recentlyAddedData.map((item) => (
-                <Card key={item.id} className="relative w-full min-w-0 pt-0 bg-white border border-gray-200 rounded-lg text-black">
+                <Card key={item.id} className="relative w-[75%] sm:w-[45%] lg:w-[30%] shrink-0 snap-start pt-0 bg-white border border-gray-200 rounded-lg text-black">
                   <img
                     src={item.image}
                     alt={item.title}

@@ -130,7 +130,7 @@ const DashboardLayout = () => {
       
       {/* Main Content Area with Sidebar */}
       <SidebarProvider className='flex-1 min-h-0 overflow-hidden'>
-        <div className='flex flex-1 min-h-0 relative'>
+        <div className='flex min-h-0 min-w-0 flex-1 relative'>
           {/* Desktop Sidebar - stays visible beside the page content */}
           <aside className='hidden md:flex h-full w-[280px] shrink-0 border-r border-gray-200 bg-white'>
             <Sidebar collapsible="none" className='h-full w-full bg-white'>
@@ -148,7 +148,7 @@ const DashboardLayout = () => {
           </Sheet>
           
           {/* Main Content - Scrollable content area */}
-          <div className='flex-1 w-full h-full overflow-y-auto bg-[#fafafa]'>
+          <div className='h-full min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#fafafa]'>
             <Outlet />
           </div>
         </div>
