@@ -1,20 +1,29 @@
-import { Button } from "@/components/ui/button"
+import { Route,Routes } from 'react-router-dom'
+import Landingpage from './pages/landingpage/landingpage'
+import Pages404 from './Pages404'
+import GetStarted from './pages/getStarted/getStarted'
+import Login from './pages/loginPage/loginPage'
+import Dashboard from './pages/dashboard/dashboard'
+import { ProtectedRoute } from './components/protected-route'
+import DashboardLayout from './layout/layout'
+import Item_list from './pages/item_list/item_list'
+import Item_add from './pages/item_add/item_add'
 
-export function App() {
+const App = () => {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <Routes>
+      <Route path='/' element={<Landingpage/>} />
+      <Route path='/get-started' element={<GetStarted/>} />
+      <Route path='/error' element={<Pages404/>} />
+      <Route path='/login' element={<Login/>} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<DashboardLayout />}>
+          <Route path='/dashboard' element={<Dashboard/>} />
+          <Route path='/items-list' element={<Item_list/>} />
+          <Route path='/item-add' element={<Item_add/>} />
+        </Route>
+      </Route>
+    </Routes>
   )
 }
 
