@@ -27,7 +27,7 @@ type AddItemForm = {
   remarks: string
 }
 
-type Category = {
+type NamedOption = {
   slug: string
   name: string
 }
@@ -59,7 +59,7 @@ function Field({
   )
 }
 
-function normalizeCategories(data: unknown): Category[] {
+function normalizeOptions(data: unknown): NamedOption[] {
   const list = Array.isArray(data)
     ? data
     : data && typeof data === 'object' && 'results' in data && Array.isArray(data.results)
@@ -83,11 +83,16 @@ function normalizeCategories(data: unknown): Category[] {
 
 const Item_add = () => {
   const navigate = useNavigate()
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<NamedOption[]>([])
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [categoryName, setCategoryName] = useState('')
   const [categoryError, setCategoryError] = useState('')
   const [savingCategory, setSavingCategory] = useState(false)
+  const [warehouses, setWarehouses] = useState<NamedOption[]>([])
+  const [warehouseOpen, setWarehouseOpen] = useState(false)
+  const [warehouseName, setWarehouseName] = useState('')
+  const [warehouseError, setWarehouseError] = useState('')
+  const [savingWarehouse, setSavingWarehouse] = useState(false)
   const [formError, setFormError] = useState('')
 
   const { register, handleSubmit, control, setValue, formState: { isSubmitting } } = useForm<AddItemForm>({
@@ -110,10 +115,19 @@ const Item_add = () => {
     api
       .get('/api/orgs/item-categories/')
       .then((response) => {
-        if (!cancelled) setCategories(normalizeCategories(response.data))
+        if (!cancelled) setCategories(normalizeOptions(response.data))
       })
       .catch(() => {
         if (!cancelled) setCategories([])
+      })
+
+    api
+      .get('/api/orgs/warehouses/')
+      .then((response) => {
+        if (!cancelled) setWarehouses(normalizeOptions(response.data))
+      })
+      .catch(() => {
+        if (!cancelled) setWarehouses([])
       })
 
     return () => {
@@ -143,7 +157,7 @@ const Item_add = () => {
     setCategoryError('')
     try {
       const response = await api.post('/api/orgs/item-categories/', { name })
-      const created = normalizeCategories(
+      const created = normalizeOptions(
         Array.isArray(response.data) ? response.data : [response.data],
       )[0] ?? { slug: name, name }
 
@@ -158,6 +172,36 @@ const Item_add = () => {
       setCategoryError(formatApiError(error))
     } finally {
       setSavingCategory(false)
+    }
+  }
+
+  const addWarehouse = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const name = warehouseName.trim()
+    if (!name) {
+      setWarehouseError('Enter a warehouse name.')
+      return
+    }
+
+    setSavingWarehouse(true)
+    setWarehouseError('')
+    try {
+      const response = await api.post('/api/orgs/warehouses/', { name })
+      const created = normalizeOptions(
+        Array.isArray(response.data) ? response.data : [response.data],
+      )[0] ?? { slug: name, name }
+
+      setWarehouses((current) => {
+        if (current.some((warehouse) => warehouse.slug === created.slug)) return current
+        return [...current, created]
+      })
+      setValue('warehouse', created.slug)
+      setWarehouseName('')
+      setWarehouseOpen(false)
+    } catch (error) {
+      setWarehouseError(formatApiError(error))
+    } finally {
+      setSavingWarehouse(false)
     }
   }
 
@@ -176,8 +220,48 @@ const Item_add = () => {
           <Field label="Item name" htmlFor="name">
             <Input id="name" type="text" placeholder="Item name" className={fieldClass} {...register('name')} />
           </Field>
-          <Field label="Warehouse" htmlFor="warehouse">
-            <Input id="warehouse" type="text" placeholder="Warehouse" className={fieldClass} {...register('warehouse')} />
+          <Field
+            label="Warehouse"
+            htmlFor="warehouse"
+            action={
+              <Button
+                type="button"
+                onClick={() => {
+                  setWarehouseError('')
+                  setWarehouseOpen(true)
+                }}
+              >
+                Add warehouse
+              </Button>
+            }
+          >
+            <Controller
+              control={control}
+              name="warehouse"
+              render={({ field }) => (
+                <Select
+                  value={field.value || null}
+                  onValueChange={(value) => field.onChange(value ?? '')}
+                >
+                  <SelectTrigger id="warehouse" className={fieldClass}>
+                    <SelectValue placeholder="Select warehouse" />
+                  </SelectTrigger>
+                  <SelectContent className="text-gray-800">
+                    {warehouses.length === 0 ? (
+                      <SelectItem value="__empty" disabled>
+                        No warehouses yet
+                      </SelectItem>
+                    ) : (
+                      warehouses.map((warehouse) => (
+                        <SelectItem key={warehouse.slug} value={warehouse.slug}>
+                          {warehouse.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </Field>
           <Field label="Unit" htmlFor="unit">
             <Input id="unit" type="text" placeholder="pcs, kg, box" className={fieldClass} {...register('unit')} />
@@ -203,7 +287,6 @@ const Item_add = () => {
             action={
               <Button
                 type="button"
-                className="text-sm font-medium bg-black text-white underline-offset-4 hover:underline"
                 onClick={() => {
                   setCategoryError('')
                   setCategoryOpen(true)
@@ -269,7 +352,7 @@ const Item_add = () => {
           <Button type="button" variant="outline" onClick={() => navigate('/items-list')}>
             Cancel
           </Button>
-          <Button type="submit" className="bg-black text-white hover:bg-black/80" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Saving…' : 'Add item'}
           </Button>
         </div>
@@ -312,8 +395,53 @@ const Item_add = () => {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-black text-white hover:bg-black/80" disabled={savingCategory}>
+              <Button type="submit" disabled={savingCategory}>
                 {savingCategory ? 'Saving…' : 'Save category'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={warehouseOpen}
+        onOpenChange={(open) => {
+          setWarehouseOpen(open)
+          if (!open) {
+            setWarehouseName('')
+            setWarehouseError('')
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add warehouse</DialogTitle>
+            <DialogDescription>Create a warehouse, then use it on this item.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={addWarehouse} className="flex flex-col gap-4">
+            <Field label="Warehouse name" htmlFor="new-warehouse">
+              <Input
+                id="new-warehouse"
+                type="text"
+                placeholder="Warehouse name"
+                className={fieldClass}
+                value={warehouseName}
+                onChange={(event) => setWarehouseName(event.target.value)}
+                autoFocus
+              />
+            </Field>
+            {warehouseError && <p className="text-sm text-red-500">{warehouseError}</p>}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setWarehouseOpen(false)}
+                disabled={savingWarehouse}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingWarehouse}>
+                {savingWarehouse ? 'Saving…' : 'Save warehouse'}
               </Button>
             </DialogFooter>
           </form>
