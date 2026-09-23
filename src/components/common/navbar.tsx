@@ -3,7 +3,6 @@ import Logo from '../../assets/logo.png'
 import profile from '../../assets/login-img.svg'
 import { LogOut, Menu, UserRound } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
-import { useTheme } from '@/components/theme-provider'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +18,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const { logout, me } = useAuth()
-  const { theme, setTheme } = useTheme()
   const displayName = me?.profile?.full_name?.trim() || me?.email || 'Account'
-
-  const cycleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark')
-  }
 
   return (
     <div className='flex justify-between items-center px-4 sm:px-6 py-4 bg-[#fafafa] border-b border-gray-200 w-full relative'>
@@ -66,7 +60,6 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
             <div className='p-1.5'>
               <DropdownMenuItem
                 className='gap-2.5 rounded-lg px-2.5 py-2 text-sm font-normal text-gray-800 focus:bg-gray-100 focus:text-gray-900'
-                onClick={cycleTheme}
               >
                 <UserRound className='size-4 text-gray-500' />
                 Profile
