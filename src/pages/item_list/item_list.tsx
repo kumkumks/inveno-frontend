@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { Table, TableHeader, TableRow, TableBody, TableCell, TableHead } from '@/components/ui/table'
 import { itemListData } from '../../jsondata/json'
 import { Input } from '@/components/ui/input'
+import { useNavigate } from 'react-router-dom'
 
 type Item = {
   id?: number | string
@@ -59,6 +60,7 @@ const getItemList = async (): Promise<Item[]> => {
 
 const Item_list = () => {
   const [itemList, setItemList] = useState<Item[]>(itemListData)
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false
@@ -83,7 +85,11 @@ const Item_list = () => {
       <section className='header-section'>
       <div className="mb-6 flex items-start justify-between gap-3">
         <h1 className='h2 text-xl font-normal break-words text-black sm:text-2xl md:text-3xl'>Item List</h1>
-        <Button className='bg-black text-white hover:bg-black/80'>Add Item<Plus size={16} className='ml-2 text-white' /></Button>
+        <Button 
+        onClick={() => {
+          navigate('/item-add')
+        }}
+        className='bg-black text-white hover:bg-black/80'>Add Item<Plus size={16} className='ml-2 text-white' /></Button>
       </div>
       </section>
 

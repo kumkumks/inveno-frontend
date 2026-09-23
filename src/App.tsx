@@ -1,4 +1,3 @@
-import React from 'react'
 import { Route,Routes } from 'react-router-dom'
 import Landingpage from './pages/landingpage/landingpage'
 import Pages404 from './Pages404'
@@ -8,6 +7,7 @@ import Dashboard from './pages/dashboard/dashboard'
 import { ProtectedRoute } from './components/protected-route'
 import DashboardLayout from './layout/layout'
 import Item_list from './pages/item_list/item_list'
+import Item_add from './pages/item_add/item_add'
 
 const App = () => {
   return (
@@ -20,6 +20,7 @@ const App = () => {
         <Route element={<DashboardLayout />}>
           <Route path='/dashboard' element={<Dashboard/>} />
           <Route path='/items-list' element={<Item_list/>} />
+          <Route path='/item-add' element={<Item_add/>} />
         </Route>
       </Route>
     </Routes>
