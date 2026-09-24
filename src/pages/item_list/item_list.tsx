@@ -3,12 +3,13 @@ import { ArrowUpDown, Plus, Search } from 'lucide-react'
 import api  from '../../services/api'
 import { useState, useEffect } from 'react'
 import { Table, TableHeader, TableRow, TableBody, TableCell, TableHead } from '@/components/ui/table'
-import { itemListData } from '../../jsondata/json'
+// import { itemListData } from '../../jsondata/json'
 import { Input } from '@/components/ui/input'
 import { useNavigate } from 'react-router-dom'
 
 type Item = {
   id?: number | string
+  slug: string
   name: string
   category: string
   part_number: string
@@ -19,6 +20,7 @@ type Item = {
   unit: string
   last_purchase_date: string
 }
+
 
 function formatDate(value: string) {
   const date = new Date(value)
@@ -59,7 +61,7 @@ const getItemList = async (): Promise<Item[]> => {
 }
 
 const Item_list = () => {
-  const [itemList, setItemList] = useState<Item[]>(itemListData)
+  const [itemList, setItemList] = useState<Item[]>([])
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -118,7 +120,7 @@ const Item_list = () => {
           </TableHeader>
           <TableBody className='[&_tr:last-child]:border-b'>
             {itemList.map((item, index) => (
-              <TableRow key={item.id ?? index} className='border-b border-gray-200 hover:bg-gray-50'>
+              <TableRow key={item.id ?? index} onClick={() => navigate(`/item-detail/${item.slug}`)} className='border-b border-gray-200 hover:bg-gray-50'>
                 <TableCell className='px-3 py-3 text-sm text-gray-500'>{index + 1}</TableCell>
                 <TableCell className='px-3 py-3'>
                   <div className='flex min-w-0 items-center gap-3'>
