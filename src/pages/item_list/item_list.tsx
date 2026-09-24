@@ -91,7 +91,7 @@ const Item_list = () => {
         onClick={() => {
           navigate('/item-add')
         }}
-        className='bg-black text-white hover:bg-black/80'>Add Item<Plus size={16} className='ml-2 text-white' /></Button>
+      variant="dark">Add Item<Plus size={16} className='ml-2 text-white' /></Button>
       </div>
       </section>
 
@@ -99,7 +99,7 @@ const Item_list = () => {
       <section className='search-section mb-6 mt-3'>
       <div className='min-w-0 flex items-center gap-3'>
         <Input  className='w-1/2 border-gray-300 rounded-md' type='text' placeholder='Search Item' />
-        <Button className='bg-black text-white hover:bg-black/80'>Search<Search size={16} className='ml-2 text-white' /></Button>
+        <Button variant="dark">Search<Search size={16} className='ml-2 text-white' /></Button>
       </div>
       </section>
 

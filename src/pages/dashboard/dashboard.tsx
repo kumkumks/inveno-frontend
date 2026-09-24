@@ -7,7 +7,13 @@ import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MapPin, Calendar, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
+import Statscard from '@/components/common/statscard'
 
+type StatsData = {
+  id: number
+  value: string
+  description: string
+}
 
 const Dashboard = () => {
   const { hash } = useLocation()
@@ -52,16 +58,7 @@ const Dashboard = () => {
       </div>
     
         {/* Stats Cards Section */}
-        <div className="grid w-full min-w-0 grid-cols-2 gap-x-3 gap-y-5 pb-6 border-b border-gray-400 sm:gap-6 lg:grid-cols-4">
-          {
-            statsData.map((item) => (
-              <div key={item.id} className='flex min-w-0 max-w-full flex-col items-center px-1'>
-                <div className='h3 mb-1 text-center text-lg font-medium text-black sm:text-xl md:text-2xl'>{item.value}</div>
-                <div className='paragraph w-full text-center text-[11px] leading-snug text-gray-600 break-words sm:text-sm'>{item.description}</div>
-              </div>
-            ))
-          }
-        </div>
+        <Statscard data={statsData as unknown as StatsData[]} />
       </section>
 
       {/* Recently Added Section */}
@@ -70,10 +67,10 @@ const Dashboard = () => {
           {/* Section Header */}
           <div className="flex justify-between items-center mb-6">
             <h4 className='text-base sm:text-lg font-medium text-black h4'>Recently added</h4>
-            <button className='flex items-center gap-1 paragraph-small font-medium text-black hover:underline'>
-              View all
-              <ArrowRight size={16} />
-            </button>
+            <Button variant="link" size="sm" className='flex items-center gap-1 paragraph-small font-medium text-black hover:underline'>
+              <span>View all</span>
+              <ArrowRight className='w-4 h-4' />
+            </Button>
           </div>
 
           {/* Product Cards — horizontal snap scroll */}
@@ -90,7 +87,7 @@ const Dashboard = () => {
                     <CardTitle className='h4 font-medium text-black'>{item.title}</CardTitle>
                   </CardHeader>
                   <CardFooter className='bg-white'>
-                    <Button className="w-full bg-black text-white hover:bg-black/80">View Event</Button>
+                    <Button variant="dark" className='w-full'>View Event</Button>
                   </CardFooter>
                 </Card>
               ))
@@ -105,10 +102,9 @@ const Dashboard = () => {
           {/* Section Header */}
           <div className="flex justify-between items-center mb-6">
             <h4 className='text-base sm:text-lg font-medium h4 text-black'>Recent activities</h4>
-            <button className='flex items-center gap-1 paragraph-small font-medium text-black hover:underline'>
-              View all
-              <ArrowRight size={16} />
-            </button>
+            <Button variant="link" size="sm" className='flex items-center gap-1 paragraph-small font-medium text-black hover:underline'>
+              <span>View all</span> <ArrowRight className='w-4 h-4' />
+            </Button>
           </div>
 
           {/* Activities List */}
