@@ -114,7 +114,7 @@ const Item_detail = () => {
 
     return (
         <div className="flex h-auto min-h-0 w-full flex-col overflow-x-hidden bg-white px-4 py-4 text-black sm:px-7 sm:py-6 lg:h-full lg:flex-row lg:overflow-hidden">
-            <div className="w-full shrink-0 border-b border-gray-200 pb-6 lg:max-w-sm lg:overflow-y-auto lg:border-r lg:border-b-0 lg:pr-6 lg:pb-0 lg:scrollbar-none">
+            <section className="w-full shrink-0 border-b border-gray-200 pb-6 lg:max-w-sm lg:overflow-y-auto lg:border-r lg:border-b-0 lg:pr-6 lg:pb-0 lg:scrollbar-none">
                 {loading && <p className="text-sm text-gray-500">Loading item…</p>}
                 {!loading && error && <p className="text-sm text-red-500">{error}</p>}
                 {/* col-1 */}
@@ -127,9 +127,6 @@ const Item_detail = () => {
                         <ArrowLeft className="size-4" />
                         Go back
                     </Button>
-                    <div className="flex size-9 items-center justify-center rounded-lg border border-gray-200 text-gray-700">
-                        <ClockArrowLeft className="size-4" />
-                    </div>
                 </div>
 
                 <h1 className="mt-5 text-lg font-semibold uppercase wrap-break-word text-black sm:text-xl">
@@ -202,11 +199,11 @@ const Item_detail = () => {
                         </button>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <section className="mt-6 flex min-h-80 min-w-0 flex-1 flex-col lg:mt-0 lg:min-h-0 lg:pl-8">
                 <h2 className="text-base font-medium text-neutral-900">Item history</h2>
-                <div className="mt-4 h-[min(28rem,55vh)] overflow-auto scrollbar-none lg:h-auto lg:min-h-0 lg:flex-1">
+                <div className="mt-4 h-[min(28rem,55vh)] overflow-auto  lg:h-auto lg:min-h-0 lg:flex-1">
                 <table className="w-full min-w-160 text-left">
                     <thead>
                         <tr className="text-sm text-gray-400">
