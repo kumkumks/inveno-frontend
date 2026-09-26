@@ -10,42 +10,7 @@ import {
   SheetContent
 } from '../components/ui/sheet'
 import { Outlet, NavLink } from 'react-router-dom'
-import { Home, Package, Warehouse, MapPin, Users } from 'lucide-react'
-
-const sidebarMenus = [
-  {
-    key: "home",
-    label: "Home",
-    icon: Home,
-    href: "/dashboard",
-  },
-
-  {
-    key: "items",
-    label: "Items",
-    icon: Package,
-    href: "/items-list",
-  },
-
-  {
-    key: "warehouses",
-    label: "Warehouses",
-    icon: Warehouse,
-    href: "/warehouses",
-  },
-  {
-    key: "space",
-    label: "Space",
-    icon: MapPin,
-    href: "/space",
-  },
-  {
-    key: "people",
-    label: "People",
-    icon: Users,
-    href: "/people",
-  },
-];
+import { sidebarMenus } from '@/config/navigation'
 
 // Custom styles for the sheet to not overlap navbar and scrollbar styling
 const sheetOverlayStyles = `

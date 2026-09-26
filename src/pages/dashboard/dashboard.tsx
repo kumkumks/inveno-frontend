@@ -7,13 +7,8 @@ import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MapPin, Calendar, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
-import Statscard from '@/components/common/statscard'
-
-type StatsData = {
-  id: number
-  value: string
-  description: string
-}
+import Statscard, { type StatsData } from '@/components/common/statscard'
+import { PageShell } from '@/components/common/page-shell'
 
 const Dashboard = () => {
   const { hash } = useLocation()
@@ -32,7 +27,7 @@ const Dashboard = () => {
   }, [hash])
 
   return (
-    <div className='flex min-w-0 w-full max-w-full flex-col overflow-x-hidden px-4 py-4  text-black sm:px-7 sm:py-6'>
+    <PageShell className='max-w-full overflow-x-hidden'>
       {/* Header Section */}
       <section id="stats" className='w-full min-w-0'>
       <div className="mb-6 flex flex-col items-start justify-between gap-3 border-b border-gray-400 pb-6 sm:mb-8 sm:gap-4 md:flex-row md:items-start">
@@ -126,7 +121,7 @@ const Dashboard = () => {
           </div>
         </div>
       </section>
-    </div>
+    </PageShell>
   )
 }
 

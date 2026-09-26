@@ -21,7 +21,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
-  hasRole: (roles: UserType | UserType[]) => boolean;
+   hasRole: (roles: UserType | UserType[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);

@@ -25,6 +25,16 @@ export async function getMe() {
   return data;
 }
 
+export async function setPassword(payload: {
+  uid: string
+  token: string
+  new_password: string
+  new_password2: string
+}) {
+  const { data } = await api.post('/api/auth/password/set/', payload)
+  return data
+}
+
 export async function logout() {
   try {
     await api.post('/api/auth/logout/');

@@ -1,34 +1,12 @@
-import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, ClockArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react'
-import api from '@/services/api'
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { formatApiError } from '@/lib/errors'
 import { Badge } from '@/components/ui/badge'
-import Statscard from '@/components/common/statscard'
-type NamedValue = string | { name?: string; slug?: string } | null | undefined
-
-type StatsData = {
-    id: number
-    value: string
-    description: string
-}
-
-type ItemDetail = {
-    slug?: string
-    name?: string
-    category?: NamedValue
-    part_number?: string
-    alternate_part_number?: string
-    location?: NamedValue
-    warehouse?: NamedValue
-    quantity_on_hand?: string | number
-    unit?: string
-    last_purchase_date?: string | null
-    description?: string
-    remarks?: string
-    image?: string
-}
+import Statscard, { type StatsData } from '@/components/common/statscard'
+import { PageShell } from '@/components/common/page-shell'
+import { useAsyncResource } from '@/hooks/use-async-resource'
+import { displayNamedValue, formatQuantity } from '@/lib/format'
+import { getItem } from '@/services/items'
 
 const historyRows = [
     'Incoming',
@@ -53,56 +31,17 @@ function actionStyle(action: (typeof historyRows)[number]) {
     return { pill: 'bg-[#e7f6e4] text-[#3d9a4a]', Icon: ArrowDownLeft }
 }
 
-function displayValue(value: NamedValue) {
-    if (!value) return 'N/A'
-    if (typeof value === 'string') return value || 'N/A'
-    return value.name || value.slug || 'N/A'
-}
-
 const Item_detail = () => {
     const { slug } = useParams()
     const navigate = useNavigate()
-    const [item, setItem] = useState<ItemDetail | null>(null)
-    const [error, setError] = useState('')
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        if (!slug) {
-            setLoading(false)
-            setError('Item not found')
-            return
-        }
-
-        let cancelled = false
-        setLoading(true)
-        setError('')
-
-        api
-            .get<ItemDetail>(`/api/orgs/items/${slug}/`)
-            .then((response) => {
-                if (!cancelled) setItem(response.data)
-            })
-            .catch((err) => {
-                if (!cancelled) setError(formatApiError(err))
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false)
-            })
-
-        return () => {
-            cancelled = true
-        }
-    }, [slug])
-
-    const quantityValue = Number(item?.quantity_on_hand)
-    const quantity =
-        item?.quantity_on_hand === undefined || item.quantity_on_hand === null || item.quantity_on_hand === '' || Number.isNaN(quantityValue)
-            ? 'N/A'
-            : Number.isInteger(quantityValue)
-                ? String(quantityValue)
-                : quantityValue.toFixed(2)
-
-    const category = displayValue(item?.category)
+    const { data: item, error: loadError, loading } = useAsyncResource(
+        () => getItem(slug as string),
+        [slug],
+        { enabled: Boolean(slug) },
+    )
+    const error = slug ? loadError : 'Item not found'
+    const quantity = formatQuantity(item?.quantity_on_hand)
+    const category = displayNamedValue(item?.category)
 
     const stats: StatsData[] = item
         ? [
@@ -113,11 +52,10 @@ const Item_detail = () => {
         : []
 
     return (
-        <div className="flex h-auto min-h-0 w-full flex-col overflow-x-hidden bg-white px-4 py-4 text-black sm:px-7 sm:py-6 lg:h-full lg:flex-row lg:overflow-hidden">
+        <PageShell className="h-auto min-h-0 overflow-x-hidden bg-white lg:h-full lg:flex-row lg:overflow-hidden">
             <section className="w-full shrink-0 border-b border-gray-200 pb-6 lg:max-w-sm lg:overflow-y-auto lg:border-r lg:border-b-0 lg:pr-6 lg:pb-0 lg:scrollbar-none">
                 {loading && <p className="text-sm text-gray-500">Loading item…</p>}
                 {!loading && error && <p className="text-sm text-red-500">{error}</p>}
-                {/* col-1 */}
                 <div className="flex items-center justify-between">
                     <Button
                         variant="gray"
@@ -240,7 +178,7 @@ const Item_detail = () => {
                 </table>
                 </div>
             </section>
-        </div>
+        </PageShell>
     )
 }
 

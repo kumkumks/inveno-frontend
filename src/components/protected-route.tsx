@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './auth-provider';
 import type { UserType } from '@/lib/types';
+import { FullScreenStatus } from '@/components/common/full-screen-status';
 
 const ORG_ROLES: UserType[] = [
   'central_admin',
@@ -24,11 +25,7 @@ export function ProtectedRoute({
   const location = useLocation();
 
   if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-gray-600">
-        Loading…
-      </div>
-    );
+    return <FullScreenStatus>Loading…</FullScreenStatus>;
   }
 
   if (!me) return <Navigate to="/login" replace state={{ from: location }} />;

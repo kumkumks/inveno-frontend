@@ -1,5 +1,15 @@
 import type { AxiosError } from 'axios';
 
+export function fieldMessage(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return value.filter((item) => typeof item === 'string').join(' ') || undefined
+  }
+  if (typeof value === 'string') {
+    return value
+  }
+  return undefined
+}
+
 export function formatApiError(error: unknown): string {
   const ax = error as AxiosError<Record<string, unknown>>;
   const data = ax.response?.data;

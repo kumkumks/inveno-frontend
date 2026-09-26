@@ -1,6 +1,6 @@
 import { cn } from "cn"
 
-type StatsData= {
+export type StatsData = {
     id: number
     value: string
     description: string

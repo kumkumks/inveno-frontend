@@ -1,4 +1,4 @@
-import { useHealth } from './healthapi/hooks';
+import { useHealth } from '@/hooks/use-health';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeroSection from './section/heroSection';
