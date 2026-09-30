@@ -16,6 +16,11 @@ export type NamedOption = {
   name: string
 }
 
+export type ItemPhoto = {
+  slug: string
+  url: string
+}
+
 export type Item = {
   id?: number | string
   slug: string
@@ -28,6 +33,7 @@ export type Item = {
   quantity_on_hand: string
   unit: string
   last_purchase_date: string
+  photos?: ItemPhoto[]
 }
 
 export type ItemDetail = {
@@ -43,7 +49,7 @@ export type ItemDetail = {
   last_purchase_date?: string | null
   description?: string
   remarks?: string
-  image?: string
+  photos?: ItemPhoto[]
 }
 
 export type AddItemPayload = {

@@ -1,6 +1,6 @@
 import { formatApiError } from '@/lib/errors'
 import { toNamedOptions, unwrapList } from '@/lib/list'
-import type { AddItemPayload, Item, ItemDetail, NamedOption } from '@/lib/types'
+import type { AddItemPayload, Item, ItemDetail, ItemPhoto, NamedOption } from '@/lib/types'
 import type { Dispatch, SetStateAction } from 'react'
 import api from './api'
 
@@ -20,6 +20,21 @@ export async function listItems() {
 
 export async function getItem(slug: string) {
   const { data } = await api.get<ItemDetail>(`/api/orgs/items/${slug}/`)
+  return data
+}
+
+export async function uploadItemPhoto(slug: string, file: File) {
+  const body = new FormData()
+  body.append('image', file)
+  const { data } = await api.post<ItemPhoto>(`/api/orgs/items/${slug}/photos/`, body, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  })
+  return data
+}
+
+export async function fetchItemPhoto(url: string) {
+  const { data } = await api.get<Blob>(url, { responseType: 'blob' })
   return data
 }
 

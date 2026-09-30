@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatDisplayDate, formatStockQuantity } from '@/lib/format'
 import { listItems } from '@/services/items'
+import { AuthImage } from '@/components/common/auth-image'
 import { PageShell, PageTitle } from '@/components/common/page-shell'
 
 const sortableHeadClass =
@@ -71,7 +72,15 @@ const Item_list = () => {
                 <TableCell className='px-3 py-3 text-sm text-gray-500'>{index + 1}</TableCell>
                 <TableCell className='px-3 py-3'>
                   <div className='flex min-w-0 items-center gap-3'>
-                    <div className='size-10 shrink-0 rounded-md bg-gray-200' aria-hidden />
+                    {item.photos?.[0] ? (
+                      <AuthImage
+                        url={item.photos[0].url}
+                        alt=""
+                        className='size-10 shrink-0 rounded-md object-cover'
+                      />
+                    ) : (
+                      <div className='size-10 shrink-0 rounded-md bg-gray-200' aria-hidden />
+                    )}
                     <div className='min-w-0'>
                       <div className='truncate text-sm font-medium text-black'>{item.name}</div>
                       <div className='truncate text-xs text-gray-500'>{item.category}</div>

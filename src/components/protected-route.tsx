@@ -13,12 +13,10 @@ const ORG_ROLES: UserType[] = [
 export function ProtectedRoute({
   roles,
   orgOnly = false,
-  centralAdminOnly = false,
   requireSpace = false,
 }: {
   roles?: UserType[];
   orgOnly?: boolean;
-  centralAdminOnly?: boolean;
   requireSpace?: boolean;
 }) {
   const { me, ready, hasRole } = useAuth();
@@ -30,11 +28,10 @@ export function ProtectedRoute({
 
   if (!me) return <Navigate to="/login" replace state={{ from: location }} />;
 
-  const role = me.profile?.user_type;
-
   if (roles && !hasRole(roles)) return <Navigate to="/error" replace />;
 
   if (orgOnly) {
+    const role = me.profile?.user_type;
     if (!role || !ORG_ROLES.includes(role)) {
       return <Navigate to="/" replace />;
     }
@@ -47,15 +44,15 @@ export function ProtectedRoute({
     }
   }
 
-  if (centralAdminOnly && role !== 'central_admin') {
-    return <Navigate to="/" replace />;
-  }
+  // if (centralAdminOnly && role !== 'central_admin') {
+  //   return <Navigate to="/" replace />;
+  // }
 
   if (requireSpace && !me.profile?.space) {
     return (
-      <p className="flex min-h-screen items-center justify-center p-6 text-center">
+      <FullScreenStatus>
         No space assigned yet. Contact your central admin.
-      </p>
+      </FullScreenStatus>
     );
   }
 

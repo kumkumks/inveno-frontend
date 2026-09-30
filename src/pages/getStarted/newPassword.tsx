@@ -80,7 +80,7 @@ const NewPassword = () => {
                         <Input type="password" className="w-full border border-gray-400" {...register('confirmPassword')} />
                     </FormField>
                     <Button type="submit" className="w-full" variant="dark" size="hero" disabled={isSubmitting}>
-                        Sign in
+                        Set Password
                     </Button>
                 </form>
             </div>

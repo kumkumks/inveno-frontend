@@ -1,9 +1,7 @@
 import api from './api';
 import { clearAccessToken, setAccessToken } from '@/lib/auth';
-import type { AccessTokenResponse, MeResponse, UserType } from '@/lib/types';
-
-export type { MeResponse, UserType };
-export type UserRole = UserType;
+import type { AccessTokenResponse, MeResponse } from '@/lib/types';
+export type { MeResponse };
 
 export async function login(email: string, password: string) {
   const { data } = await api.post<AccessTokenResponse>('/api/auth/login/', {

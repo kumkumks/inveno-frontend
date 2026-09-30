@@ -11,14 +11,12 @@ import { getMe, login as apiLogin, logout as apiLogout, silentRefresh } from '@/
 import { clearAccessToken, getAccessToken } from '@/lib/auth';
 import type { MeResponse, UserType } from '@/lib/types';
 
+// Provide User Authentication and Authorization throughout the application
+
 interface AuthContextValue {
   me: MeResponse | null;
-  user: MeResponse | null;
-  isLoading: boolean;
   ready: boolean;
-  signIn: (email: string, password: string) => Promise<MeResponse>;
   login: (email: string, password: string) => Promise<MeResponse>;
-  signOut: () => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
    hasRole: (roles: UserType | UserType[]) => boolean;
@@ -30,10 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [ready, setReady] = useState(false);
 
+  // Refresh the user profile
   const refreshMe = useCallback(async () => {
     const profile = await getMe();
     setMe(profile);
   }, []);
+
 
   useEffect(() => {
     void (async () => {
@@ -66,24 +66,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Check if the user has the required role
   const hasRole = useCallback(
     (roles: UserType | UserType[]) => {
       const role = me?.profile?.user_type;
       if (!role) return false;
-      return (Array.isArray(roles) ? roles : [roles]).includes(role);
+      const AllowedUserRoles = (Array.isArray(roles) ? roles : [roles]);
+      return AllowedUserRoles.includes(role);
     },
     [me],
   );
 
+  
   const value = useMemo(
     () => ({
       me,
-      user: me,
-      isLoading: !ready,
       ready,
-      signIn: login,
       login,
-      signOut: logout,
       logout,
       refreshMe,
       hasRole,

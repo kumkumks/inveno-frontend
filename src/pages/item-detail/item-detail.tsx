@@ -1,16 +1,20 @@
+import { useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { AuthImage } from '@/components/common/auth-image'
 import Statscard, { type StatsData } from '@/components/common/statscard'
 import { PageShell } from '@/components/common/page-shell'
 import { useAsyncResource } from '@/hooks/use-async-resource'
+import { formatApiError } from '@/lib/errors'
 import { displayNamedValue, formatQuantity } from '@/lib/format'
-import { getItem } from '@/services/items'
+import { cn } from '@/lib/utils'
+import { getItem, uploadItemPhoto } from '@/services/items'
 
 const historyRows = [
     'Incoming',
-    'Outgoing',
+    'Outgoing', 
     'Item edit',
     'Incoming',
     'Outgoing',
@@ -20,6 +24,8 @@ const historyRows = [
     'Outgoing',
     'Incoming',
 ] as const
+
+
 
 function actionStyle(action: (typeof historyRows)[number]) {
     if (action === 'Outgoing') {
@@ -34,12 +40,47 @@ function actionStyle(action: (typeof historyRows)[number]) {
 const Item_detail = () => {
     const { slug } = useParams()
     const navigate = useNavigate()
-    const { data: item, error: loadError, loading } = useAsyncResource(
+    const { data: item, setData: setItem, error: loadError, loading } = useAsyncResource(
         () => getItem(slug as string),
         [slug],
         { enabled: Boolean(slug) },
     )
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [selectedPhotoSlug, setSelectedPhotoSlug] = useState<string>()
+    const [uploading, setUploading] = useState(false)
+    const [uploadError, setUploadError] = useState('')
     const error = slug ? loadError : 'Item not found'
+    const photos = item?.photos ?? []
+    const selectedPhoto = photos.find((photo) => photo.slug === selectedPhotoSlug) ?? photos[0]
+
+    const openPhotoPicker = () => {
+        if (photos.length >= 5) {
+            setUploadError('An item can have at most 5 photos.')
+            return
+        }
+        setUploadError('')
+        fileInputRef.current?.click()
+    }
+
+    const onPhotoSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        event.target.value = ''
+        if (!file || !slug) return
+
+        setUploading(true)
+        setUploadError('')
+        try {
+            const photo = await uploadItemPhoto(slug, file)
+            setItem((current) =>
+                current ? { ...current, photos: [...(current.photos ?? []), photo] } : current,
+            )
+            setSelectedPhotoSlug(photo.slug)
+        } catch (uploadFailure) {
+            setUploadError(formatApiError(uploadFailure))
+        } finally {
+            setUploading(false)
+        }
+    }
     const quantity = formatQuantity(item?.quantity_on_hand)
     const category = displayNamedValue(item?.category)
 
@@ -90,35 +131,63 @@ const Item_detail = () => {
                 </div>
 
                 <div className="relative mt-5 overflow-hidden rounded-xl bg-[#f3f3f3]">
-                    {item?.image ? (
-                        <img src={item.image} alt={item.name || 'Item'} className="aspect-4/3 w-full object-contain" />
+                    {selectedPhoto ? (
+                        <AuthImage
+                            url={selectedPhoto.url}
+                            alt={item?.name || 'Item'}
+                            className="aspect-4/3 w-full object-contain"
+                        />
                     ) : (
-                        <div className="aspect-4/3 w-full bg-[#ececec]" />
+                        <div className="flex aspect-4/3 w-full items-center bg-[#ececec]">
+                            <div className="h-20 w-full text-center text-3xl font-semibold">No Image is here</div>
+                        </div>
                     )}
                     <button
                         type="button"
                         aria-label="Edit image"
-                        className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm"
+                        disabled={uploading}
+                        className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm disabled:opacity-50"
+                        onClick={openPhotoPicker}
                     >
                         <Pencil className="size-3.5" />
                     </button>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
-                    {[0, 1, 2].map((thumb) => (
-                        <div
-                            key={thumb}
-                            className="size-12 rounded-md border border-gray-200 bg-white bg-size-[10px_10px] bg-[linear-gradient(45deg,#e8e8e8_25%,transparent_25%),linear-gradient(-45deg,#e8e8e8_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#e8e8e8_75%),linear-gradient(-45deg,transparent_75%,#e8e8e8_75%)] bg-position-[0_0,0_5px,5px_-5px,-5px_0]"
-                        />
+                    {photos.map((photo, index) => (
+                        <button
+                            key={photo.slug}
+                            type="button"
+                            aria-label={`Show photo ${index + 1}`}
+                            aria-pressed={selectedPhoto?.slug === photo.slug}
+                            className={cn(
+                                'size-12 overflow-hidden rounded-md border bg-white',
+                                selectedPhoto?.slug === photo.slug ? 'border-neutral-900' : 'border-gray-200',
+                            )}
+                            onClick={() => setSelectedPhotoSlug(photo.slug)}
+                        >
+                            <AuthImage url={photo.url} alt="" className="size-full object-cover" />
+                        </button>
                     ))}
                     <button
                         type="button"
                         aria-label="Add image"
-                        className="flex size-12 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-800"
+                        disabled={uploading}
+                        className="flex size-12 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-800 disabled:opacity-50"
+                        onClick={openPhotoPicker}
                     >
                         <Plus className="size-4" />
                     </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="hidden"
+                        onChange={onPhotoSelected}
+                    />
                 </div>
+                {uploading && <p className="mt-2 text-sm text-gray-500">Uploading image…</p>}
+                {uploadError && <p className="mt-2 text-sm text-red-500">{uploadError}</p>}
 
                 <div className="mt-4 rounded-xl border border-gray-200 p-4">
                     <h2 className="text-sm font-semibold text-neutral-900">Item actions</h2>
