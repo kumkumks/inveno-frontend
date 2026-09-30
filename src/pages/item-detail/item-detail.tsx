@@ -1,13 +1,15 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Delete, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AuthImage } from '@/components/common/auth-image'
-import Statscard, { type StatsData } from '@/components/common/statscard'
+import { InlineStatus } from '@/components/common/inline-status'
 import { PageShell } from '@/components/common/page-shell'
+import { PermissionNotice } from '@/components/common/permission-notice'
+import Statscard, { type StatsData } from '@/components/common/statscard'
 import { useAsyncResource } from '@/hooks/use-async-resource'
-import { formatApiError } from '@/lib/errors'
+import { formatApiError, isPermissionError } from '@/lib/errors'
 import { displayNamedValue, formatQuantity } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { getItem, uploadItemPhoto } from '@/services/items'
@@ -50,6 +52,7 @@ const Item_detail = () => {
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState('')
     const error = slug ? loadError : 'Item not found'
+    const permissionDenied = Boolean(error && isPermissionError(error))
     const photos = item?.photos ?? []
     const selectedPhoto = photos.find((photo) => photo.slug === selectedPhotoSlug) ?? photos[0]
 
@@ -95,8 +98,6 @@ const Item_detail = () => {
     return (
         <PageShell className="h-auto min-h-0 overflow-x-hidden bg-white lg:h-full lg:flex-row lg:overflow-hidden">
             <section className="w-full shrink-0 border-b border-gray-200 pb-6 lg:max-w-sm lg:overflow-y-auto lg:border-r lg:border-b-0 lg:pr-6 lg:pb-0 lg:scrollbar-none">
-                {loading && <p className="text-sm text-gray-500">Loading item…</p>}
-                {!loading && error && <p className="text-sm text-red-500">{error}</p>}
                 <div className="flex items-center justify-between">
                     <Button
                         variant="gray"
@@ -107,7 +108,16 @@ const Item_detail = () => {
                         Go back
                     </Button>
                 </div>
+                <InlineStatus loading={loading} loadingLabel="Loading item…" className="mt-5" />
+                {permissionDenied && (
+                    <div className="mt-5">
+                        <PermissionNotice action="cannot open this item" />
+                    </div>
+                )}
+                {!permissionDenied && <InlineStatus error={error} className="mt-5" />}
 
+                {item && (
+                <>
                 <h1 className="mt-5 text-lg font-semibold uppercase wrap-break-word text-black sm:text-xl">
                     {item?.name}
                 </h1>
@@ -149,7 +159,7 @@ const Item_detail = () => {
                         className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm disabled:opacity-50"
                         onClick={openPhotoPicker}
                     >
-                        <Pencil className="size-3.5" />
+                        <Delete className="size-3.5" />
                     </button>
                 </div>
 
@@ -186,8 +196,8 @@ const Item_detail = () => {
                         onChange={onPhotoSelected}
                     />
                 </div>
-                {uploading && <p className="mt-2 text-sm text-gray-500">Uploading image…</p>}
-                {uploadError && <p className="mt-2 text-sm text-red-500">{uploadError}</p>}
+                {uploading && <InlineStatus loading loadingLabel="Uploading image…" className="mt-2" />}
+                {uploadError && <InlineStatus error={uploadError} className="mt-2" />}
 
                 <div className="mt-4 rounded-xl border border-gray-200 p-4">
                     <h2 className="text-sm font-semibold text-neutral-900">Item actions</h2>
@@ -206,8 +216,11 @@ const Item_detail = () => {
                         </button>
                     </div>
                 </div>
+                </>
+                )}
             </section>
 
+            {item && (
             <section className="mt-6 flex min-h-80 min-w-0 flex-1 flex-col lg:mt-0 lg:min-h-0 lg:pl-8">
                 <h2 className="text-base font-medium text-neutral-900">Item history</h2>
                 <div className="mt-4 h-[min(28rem,55vh)] overflow-auto  lg:h-auto lg:min-h-0 lg:flex-1">
@@ -247,6 +260,7 @@ const Item_detail = () => {
                 </table>
                 </div>
             </section>
+            )}
         </PageShell>
     )
 }

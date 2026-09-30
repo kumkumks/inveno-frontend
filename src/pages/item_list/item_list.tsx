@@ -4,10 +4,13 @@ import { Table, TableHeader, TableRow, TableBody, TableCell, TableHead } from '@
 import { Input } from '@/components/ui/input'
 import { useNavigate } from 'react-router-dom'
 import { useAsyncResource } from '@/hooks/use-async-resource'
+import { isPermissionError } from '@/lib/errors'
 import { formatDisplayDate, formatStockQuantity } from '@/lib/format'
 import { listItems } from '@/services/items'
 import { AuthImage } from '@/components/common/auth-image'
+import { InlineStatus } from '@/components/common/inline-status'
 import { PageShell, PageTitle } from '@/components/common/page-shell'
+import { PermissionNotice } from '@/components/common/permission-notice'
 
 const sortableHeadClass =
   'h-11 px-3 text-left text-[11px] font-medium uppercase tracking-wide text-gray-500'
@@ -22,8 +25,9 @@ const SortableHead = ({ label }: { label: string }) => (
 )
 
 const Item_list = () => {
-  const { data: itemList = [] } = useAsyncResource(listItems, [])
-  const navigate = useNavigate();
+  const { data: itemList = [], error, loading } = useAsyncResource(listItems, [])
+  const navigate = useNavigate()
+  const permissionDenied = Boolean(error && isPermissionError(error))
 
   return (
     <PageShell className='max-w-full bg-white'>
@@ -31,27 +35,35 @@ const Item_list = () => {
       <PageTitle
         className='h2 break-words'
         action={
-          <Button
-            onClick={() => {
-              navigate('/item-add')
-            }}
-            variant="dark"
-          >
-            Add Item<Plus size={16} className='ml-2 text-white' />
-          </Button>
+          !permissionDenied ? (
+            <Button
+              onClick={() => {
+                navigate('/item-add')
+              }}
+              variant="dark"
+            >
+              Add Item<Plus size={16} className='ml-2 text-white' />
+            </Button>
+          ) : null
         }
       >
         Item List
       </PageTitle>
       </section>
 
+      {!permissionDenied && (
       <section className='search-section mb-6 mt-3'>
       <div className='min-w-0 flex items-center gap-3'>
         <Input  className='w-1/2 border-gray-300 rounded-md' type='text' placeholder='Search Item' />
         <Button variant="dark">Search<Search size={16} className='ml-2 text-white' /></Button>
       </div>
       </section>
+      )}
 
+      <InlineStatus loading={loading} loadingLabel="Loading items…" />
+      {permissionDenied && <PermissionNotice action="cannot view items" />}
+      {!permissionDenied && <InlineStatus error={error} />}
+      {!loading && !error && (
       <section className='item-list-section'>
       <div className='min-w-0'>
         <Table className='w-full min-w-[900px]'>
@@ -104,6 +116,7 @@ const Item_list = () => {
         </Table>
       </div>
       </section>
+      )}
     </PageShell>
   )
 }

@@ -1,0 +1,17 @@
+---
+description: Reuse shared helpers instead of copying page logic
+alwaysApply: true
+---
+
+# Shared patterns
+
+Put new code in the folder that already owns that kind of work. Do not copy helpers into a page.
+
+- Pure helpers: `src/lib` (`formatApiError`, `isPermissionError`, `displayRole`, `accountLabel`)
+- API calls: `src/services` (items, auth). Pages do not call Axios directly.
+- Shared hooks: `src/hooks` (`useAsyncResource`, `useAuthenticatedImage`)
+- Shared UI: `src/components/common` (`PermissionNotice`, `InlineStatus`, `AuthImage`, `PageShell`)
+
+When a signed-in user cannot complete an action, render `PermissionNotice` with an action sentence. Do not add another role map or sign-out card.
+
+Show load and API text with `InlineStatus`. Load private item photos with `AuthImage`.

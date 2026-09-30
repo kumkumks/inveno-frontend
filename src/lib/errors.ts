@@ -28,6 +28,10 @@ export function formatApiError(error: unknown): string {
   return parts.join('; ') || 'Request failed';
 }
 
+export function isPermissionError(message: string) {
+  return /permission/i.test(message)
+}
+
 export function retryAfterSeconds(error: unknown): number | null {
   const ax = error as AxiosError;
   const header = ax.response?.headers?.['retry-after'];
