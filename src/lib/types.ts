@@ -47,6 +47,7 @@ export type ItemDetail = {
   quantity_on_hand?: string | number
   unit?: string
   last_purchase_date?: string | null
+  last_purchase_quantity?: string | number | null
   description?: string
   remarks?: string
   photos?: ItemPhoto[]
@@ -62,6 +63,11 @@ export type AddItemPayload = {
   category: string
   location: string
   remarks: string
+}
+
+export type UpdateItemPayload = AddItemPayload & {
+  last_purchase_date?: string | null
+  last_purchase_quantity?: string | null
 }
 
 export type MeResponse = {

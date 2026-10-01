@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AuthImage } from '@/components/common/auth-image'
 import { InlineStatus } from '@/components/common/inline-status'
+import { ItemDeleteDialog } from '@/components/common/item-delete-dialog'
+import { ItemEditDialog } from '@/components/common/item-edit-dialog'
 import { PageShell } from '@/components/common/page-shell'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import Statscard, { type StatsData } from '@/components/common/statscard'
@@ -12,7 +14,7 @@ import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { displayNamedValue, formatQuantity } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { getItem, uploadItemPhoto } from '@/services/items'
+import { getItem, uploadItemPhoto, deleteItemPhoto } from '@/services/items'
 
 const historyRows = [
     'Incoming',
@@ -49,8 +51,10 @@ const Item_detail = () => {
     )
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [selectedPhotoSlug, setSelectedPhotoSlug] = useState<string>()
-    const [uploading, setUploading] = useState(false)
-    const [uploadError, setUploadError] = useState('')
+    const [photoBusy, setPhotoBusy] = useState(false)
+    const [photoError, setPhotoError] = useState('')
+    const [editOpen, setEditOpen] = useState(false)
+    const [deleteOpen, setDeleteOpen] = useState(false)
     const error = slug ? loadError : 'Item not found'
     const permissionDenied = Boolean(error && isPermissionError(error))
     const photos = item?.photos ?? []
@@ -58,10 +62,10 @@ const Item_detail = () => {
 
     const openPhotoPicker = () => {
         if (photos.length >= 5) {
-            setUploadError('An item can have at most 5 photos.')
+            setPhotoError('An item can have at most 5 photos.')
             return
         }
-        setUploadError('')
+        setPhotoError('')
         fileInputRef.current?.click()
     }
 
@@ -70,8 +74,8 @@ const Item_detail = () => {
         event.target.value = ''
         if (!file || !slug) return
 
-        setUploading(true)
-        setUploadError('')
+        setPhotoBusy(true)
+        setPhotoError('')
         try {
             const photo = await uploadItemPhoto(slug, file)
             setItem((current) =>
@@ -79,9 +83,32 @@ const Item_detail = () => {
             )
             setSelectedPhotoSlug(photo.slug)
         } catch (uploadFailure) {
-            setUploadError(formatApiError(uploadFailure))
+            setPhotoError(formatApiError(uploadFailure))
         } finally {
-            setUploading(false)
+            setPhotoBusy(false)
+        }
+    }
+
+    const removeSelectedPhoto = async () => {
+        if (!slug || !selectedPhoto || photoBusy) return
+
+        setPhotoBusy(true)
+        setPhotoError('')
+        try {
+            await deleteItemPhoto(slug, selectedPhoto.slug)
+            setItem((current) =>
+                current
+                    ? {
+                        ...current,
+                        photos: (current.photos ?? []).filter((photo) => photo.slug !== selectedPhoto.slug),
+                    }
+                    : current,
+            )
+            setSelectedPhotoSlug(undefined)
+        } catch (deleteFailure) {
+            setPhotoError(formatApiError(deleteFailure))
+        } finally {
+            setPhotoBusy(false)
         }
     }
     const quantity = formatQuantity(item?.quantity_on_hand)
@@ -154,10 +181,10 @@ const Item_detail = () => {
                     )}
                     <button
                         type="button"
-                        aria-label="Edit image"
-                        disabled={uploading}
+                        aria-label="Delete image"
+                        disabled={photoBusy || !selectedPhoto}
                         className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm disabled:opacity-50"
-                        onClick={openPhotoPicker}
+                        onClick={() => void removeSelectedPhoto()}
                     >
                         <Delete className="size-3.5" />
                     </button>
@@ -182,7 +209,7 @@ const Item_detail = () => {
                     <button
                         type="button"
                         aria-label="Add image"
-                        disabled={uploading}
+                        disabled={photoBusy}
                         className="flex size-12 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-800 disabled:opacity-50"
                         onClick={openPhotoPicker}
                     >
@@ -196,20 +223,28 @@ const Item_detail = () => {
                         onChange={onPhotoSelected}
                     />
                 </div>
-                {uploading && <InlineStatus loading loadingLabel="Uploading image…" className="mt-2" />}
-                {uploadError && <InlineStatus error={uploadError} className="mt-2" />}
+                {photoBusy && <InlineStatus loading loadingLabel="Updating image…" className="mt-2" />}
+                {photoError && isPermissionError(photoError) && (
+                    <div className="mt-2">
+                        <PermissionNotice action="cannot change this item's photos" />
+                    </div>
+                )}
+                {photoError && !isPermissionError(photoError) && (
+                    <InlineStatus error={photoError} className="mt-2" />
+                )}
 
                 <div className="mt-4 rounded-xl border border-gray-200 p-4">
                     <h2 className="text-sm font-semibold text-neutral-900">Item actions</h2>
                     <p className="mt-1 text-sm font-medium text-neutral-800">Edit details, delete, or restore this product</p>
                     <div className="mt-3 flex items-center gap-2">
-                        <Button variant="dark" className="h-8 rounded-full px-3.5 text-xs">
+                        <Button variant="dark" className="h-8 rounded-full px-3.5 text-xs" onClick={() => setEditOpen(true)}>
                             Edit
                             <Pencil className="size-3.5" />
                         </Button>
                         <button
                             type="button"
                             className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#fde8e8] px-3.5 text-xs font-medium text-[#e11d48]"
+                            onClick={() => setDeleteOpen(true)}
                         >
                             Delete
                             <Trash2 className="size-3.5" />
@@ -260,6 +295,28 @@ const Item_detail = () => {
                 </table>
                 </div>
             </section>
+            )}
+            {item?.slug && (
+                <>
+                    <ItemEditDialog
+                        open={editOpen}
+                        onOpenChange={setEditOpen}
+                        item={item}
+                        onSaved={(saved) => {
+                            setItem(saved)
+                            if (saved.slug && saved.slug !== slug) {
+                                navigate(`/item-detail/${saved.slug}`, { replace: true })
+                            }
+                        }}
+                    />
+                    <ItemDeleteDialog
+                        open={deleteOpen}
+                        onOpenChange={setDeleteOpen}
+                        slug={item.slug}
+                        name={item.name}
+                        onDeleted={() => navigate('/items-list')}
+                    />
+                </>
             )}
         </PageShell>
     )

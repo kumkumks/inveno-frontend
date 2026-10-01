@@ -1,6 +1,6 @@
 import { formatApiError } from '@/lib/errors'
 import { toNamedOptions, unwrapList } from '@/lib/list'
-import type { AddItemPayload, Item, ItemDetail, ItemPhoto, NamedOption } from '@/lib/types'
+import type { AddItemPayload, Item, ItemDetail, ItemPhoto, NamedOption, UpdateItemPayload } from '@/lib/types'
 import type { Dispatch, SetStateAction } from 'react'
 import api from './api'
 
@@ -38,9 +38,23 @@ export async function fetchItemPhoto(url: string) {
   return data
 }
 
+export async function deleteItemPhoto(slug: string, photoSlug: string) {
+  const { data } = await api.delete(`/api/orgs/items/${slug}/photos/${photoSlug}/`)
+  return data
+}
+
 export async function createItem(payload: AddItemPayload) {
   const { data } = await api.post('/api/orgs/items/', payload)
   return data
+}
+
+export async function updateItem(slug: string, payload: UpdateItemPayload) {
+  const { data } = await api.patch<ItemDetail>(`/api/orgs/items/${slug}/`, payload)
+  return data
+}
+
+export async function deleteItem(slug: string) {
+  await api.post(`/api/orgs/items/${slug}/suspend/`)
 }
 
 export async function listCategories() {

@@ -7,11 +7,11 @@ alwaysApply: true
 
 Put new code in the folder that already owns that kind of work. Do not copy helpers into a page.
 
-- Pure helpers: `src/lib` (`formatApiError`, `isPermissionError`, `displayRole`, `accountLabel`)
+- Pure helpers: `src/lib` (`formatApiError`, `isPermissionError`, `displayRole`, `accountLabel`, `formatDate`)
 - API calls: `src/services` (items, auth). Pages do not call Axios directly.
 - Shared hooks: `src/hooks` (`useAsyncResource`, `useAuthenticatedImage`)
-- Shared UI: `src/components/common` (`PermissionNotice`, `InlineStatus`, `AuthImage`, `PageShell`)
+- Shared UI: `src/components/common` (`PermissionNotice`, `InlineStatus`, `AuthImage`, `PageShell`, `ItemForm`)
 
 When a signed-in user cannot complete an action, render `PermissionNotice` with an action sentence. Do not add another role map or sign-out card.
 
-Show load and API text with `InlineStatus`. Load private item photos with `AuthImage`.
+Show load and API text with `InlineStatus`. Load private item photos with `AuthImage`. Format dates with `formatDate` from `src/lib/format.ts`.

@@ -9,12 +9,11 @@ import { MapPin, Calendar, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import Statscard, { type StatsData } from '@/components/common/statscard'
 import { PageShell } from '@/components/common/page-shell'
+import { formatDate } from '@/lib/format'
 
 const Dashboard = () => {
   const { hash } = useLocation()
   const { me } = useAuth()
-  const registered_on = new Date(me?.org?.registered_on || '');
-  const registered_on_formatted = registered_on.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // Scroll to the section matching the URL hash (react-router's Link doesn't
   // do this automatically since it only performs client-side navigation).
@@ -46,7 +45,7 @@ const Dashboard = () => {
             </div>
             <div className='flex items-center gap-1 paragraph-small'>
               <Calendar size={14} className='shrink-0 text-gray-500' />
-              <span>Since {registered_on_formatted}</span>
+              <span>Since {formatDate(me?.org?.registered_on, 'long')}</span>
             </div>
           </div>
         </div>

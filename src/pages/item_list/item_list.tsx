@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { useNavigate } from 'react-router-dom'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { isPermissionError } from '@/lib/errors'
-import { formatDisplayDate, formatStockQuantity } from '@/lib/format'
+import { formatDate, formatStockQuantity } from '@/lib/format'
 import { listItems } from '@/services/items'
 import { AuthImage } from '@/components/common/auth-image'
 import { InlineStatus } from '@/components/common/inline-status'
@@ -109,7 +109,7 @@ const Item_list = () => {
                   <div className='text-sm font-medium text-black'>{formatStockQuantity(item.quantity_on_hand)}</div>
                   <div className='text-xs text-gray-500'>{item.unit}</div>
                 </TableCell>
-                <TableCell className='px-3 py-3 text-sm text-black'>{item.last_purchase_date ? formatDisplayDate(item.last_purchase_date) : 'N/A'}</TableCell>
+                <TableCell className='px-3 py-3 text-sm text-black'>{formatDate(item.last_purchase_date)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
