@@ -1,5 +1,15 @@
 import type { AxiosError } from 'axios';
 
+export function fieldMessage(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return value.filter((item) => typeof item === 'string').join(' ') || undefined
+  }
+  if (typeof value === 'string') {
+    return value
+  }
+  return undefined
+}
+
 export function formatApiError(error: unknown): string {
   const ax = error as AxiosError<Record<string, unknown>>;
   const data = ax.response?.data;
@@ -16,6 +26,10 @@ export function formatApiError(error: unknown): string {
     if (Array.isArray(msgs)) parts.push(`${field}: ${(msgs as string[]).join(', ')}`);
   }
   return parts.join('; ') || 'Request failed';
+}
+
+export function isPermissionError(message: string) {
+  return /permission/i.test(message)
 }
 
 export function retryAfterSeconds(error: unknown): number | null {

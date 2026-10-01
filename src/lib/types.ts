@@ -9,6 +9,69 @@ export type AccessTokenResponse = {
   access: string;
 };
 
+export type NamedValue = string | { name?: string; slug?: string } | null | undefined
+
+export type NamedOption = {
+  slug: string
+  name: string
+}
+
+export type ItemPhoto = {
+  slug: string
+  url: string
+}
+
+export type Item = {
+  id?: number | string
+  slug: string
+  name: string
+  category: string
+  part_number: string
+  alternate_part_number: string
+  location: string
+  warehouse: string
+  quantity_on_hand: string
+  unit: string
+  last_purchase_date: string
+  photos?: ItemPhoto[]
+  is_active?: boolean
+}
+
+export type ItemDetail = {
+  slug?: string
+  name?: string
+  category?: NamedValue
+  part_number?: string
+  alternate_part_number?: string
+  location?: NamedValue
+  warehouse?: NamedValue
+  quantity_on_hand?: string | number
+  unit?: string
+  last_purchase_date?: string | null
+  last_purchase_quantity?: string | number | null
+  description?: string
+  remarks?: string
+  photos?: ItemPhoto[]
+  is_active?: boolean
+}
+
+export type AddItemPayload = {
+  warehouse: string
+  name: string
+  unit: string
+  description: string
+  part_number: string
+  alternate_part_number: string
+  category: string
+  location: string
+  remarks: string
+}
+
+export type UpdateItemPayload = AddItemPayload & {
+  last_purchase_date?: string | null
+  last_purchase_quantity?: string | null
+}
+
 export type MeResponse = {
   id: string;
   email: string;
