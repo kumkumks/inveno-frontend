@@ -11,19 +11,23 @@ import {
 import { InlineStatus } from '@/components/common/inline-status'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { formatApiError, isPermissionError } from '@/lib/errors'
-import { deleteItem } from '@/services/items'
+import { deleteItem, deleteItemPhoto } from '@/services/items'
 
 export function ItemDeleteDialog({
   open,
   onOpenChange,
+  title,
   slug,
+  photoSlug,
   name,
   onDeleted,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  title: string
   slug: string
   name?: string
+  photoSlug?: string
   onDeleted: () => void
 }) {
   const [saving, setSaving] = useState(false)
@@ -33,7 +37,11 @@ export function ItemDeleteDialog({
     setSaving(true)
     setError('')
     try {
-      await deleteItem(slug)
+      if (photoSlug) {
+        await deleteItemPhoto(slug, photoSlug)
+      } else {
+        await deleteItem(slug)
+      }
       onOpenChange(false)
       onDeleted()
     } catch (deleteFailure) {
@@ -55,12 +63,18 @@ export function ItemDeleteDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete item</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {name ? `Delete ${name}? This cannot be undone from this screen.` : 'Delete this item?'}
+            {photoSlug
+              ? 'Are you sure you want to delete this image?'
+              : name
+                ? `Delete ${name}? This cannot be undone from this screen.`
+                : 'Delete this item?'}
           </DialogDescription>
         </DialogHeader>
-        {error && isPermissionError(error) && <PermissionNotice action="cannot delete this item" />}
+        {error && isPermissionError(error) && (
+          <PermissionNotice action={photoSlug ? "cannot change this item's photos" : 'cannot delete this item'} />
+        )}
         {error && !isPermissionError(error) && <InlineStatus error={error} />}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>

@@ -14,7 +14,8 @@ import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { displayNamedValue, formatQuantity } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { getItem, uploadItemPhoto, deleteItemPhoto } from '@/services/items'
+import { getItem, uploadItemPhoto } from '@/services/items'
+
 
 const historyRows = [
     'Incoming',
@@ -53,14 +54,17 @@ const Item_detail = () => {
     const [selectedPhotoSlug, setSelectedPhotoSlug] = useState<string>()
     const [photoBusy, setPhotoBusy] = useState(false)
     const [photoError, setPhotoError] = useState('')
+    const [photoDeleteOpen, setPhotoDeleteOpen] = useState(false)
     const [editOpen, setEditOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
     const error = slug ? loadError : 'Item not found'
     const permissionDenied = Boolean(error && isPermissionError(error))
     const photos = item?.photos ?? []
     const selectedPhoto = photos.find((photo) => photo.slug === selectedPhotoSlug) ?? photos[0]
+    const suspended = item?.is_active === false
 
     const openPhotoPicker = () => {
+        if (suspended) return
         if (photos.length >= 5) {
             setPhotoError('An item can have at most 5 photos.')
             return
@@ -72,7 +76,7 @@ const Item_detail = () => {
     const onPhotoSelected = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         event.target.value = ''
-        if (!file || !slug) return
+        if (!file || !slug || suspended) return
 
         setPhotoBusy(true)
         setPhotoError('')
@@ -89,28 +93,6 @@ const Item_detail = () => {
         }
     }
 
-    const removeSelectedPhoto = async () => {
-        if (!slug || !selectedPhoto || photoBusy) return
-
-        setPhotoBusy(true)
-        setPhotoError('')
-        try {
-            await deleteItemPhoto(slug, selectedPhoto.slug)
-            setItem((current) =>
-                current
-                    ? {
-                        ...current,
-                        photos: (current.photos ?? []).filter((photo) => photo.slug !== selectedPhoto.slug),
-                    }
-                    : current,
-            )
-            setSelectedPhotoSlug(undefined)
-        } catch (deleteFailure) {
-            setPhotoError(formatApiError(deleteFailure))
-        } finally {
-            setPhotoBusy(false)
-        }
-    }
     const quantity = formatQuantity(item?.quantity_on_hand)
     const category = displayNamedValue(item?.category)
 
@@ -161,6 +143,11 @@ const Item_detail = () => {
                             {category}
                         </Badge>
                     )}
+                    {suspended && (
+                        <Badge variant="destructive" className="rounded-full px-2.5">
+                            Suspended
+                        </Badge>
+                    )}
                 </div>
 
                 <div className="mt-6">
@@ -182,9 +169,12 @@ const Item_detail = () => {
                     <button
                         type="button"
                         aria-label="Delete image"
-                        disabled={photoBusy || !selectedPhoto}
+                        disabled={suspended || photoBusy || !selectedPhoto}
                         className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm disabled:opacity-50"
-                        onClick={() => void removeSelectedPhoto()}
+                        onClick={() => {
+                            if (suspended) return
+                            setPhotoDeleteOpen(true)
+                        }}
                     >
                         <Delete className="size-3.5" />
                     </button>
@@ -209,7 +199,7 @@ const Item_detail = () => {
                     <button
                         type="button"
                         aria-label="Add image"
-                        disabled={photoBusy}
+                        disabled={suspended || photoBusy}
                         className="flex size-12 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-800 disabled:opacity-50"
                         onClick={openPhotoPicker}
                     >
@@ -235,16 +225,32 @@ const Item_detail = () => {
 
                 <div className="mt-4 rounded-xl border border-gray-200 p-4">
                     <h2 className="text-sm font-semibold text-neutral-900">Item actions</h2>
-                    <p className="mt-1 text-sm font-medium text-neutral-800">Edit details, delete, or restore this product</p>
+                    <p className="mt-1 text-sm font-medium text-neutral-800">
+                        {suspended
+                            ? 'This item is suspended and cannot be edited or deleted.'
+                            : 'Edit details, delete, or restore this product'}
+                    </p>
                     <div className="mt-3 flex items-center gap-2">
-                        <Button variant="dark" className="h-8 rounded-full px-3.5 text-xs" onClick={() => setEditOpen(true)}>
+                        <Button
+                            variant="dark"
+                            className="h-8 rounded-full px-3.5 text-xs"
+                            disabled={suspended}
+                            onClick={() => {
+                                if (suspended) return
+                                setEditOpen(true)
+                            }}
+                        >
                             Edit
                             <Pencil className="size-3.5" />
                         </Button>
                         <button
                             type="button"
-                            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#fde8e8] px-3.5 text-xs font-medium text-[#e11d48]"
-                            onClick={() => setDeleteOpen(true)}
+                            disabled={suspended}
+                            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#fde8e8] px-3.5 text-xs font-medium text-[#e11d48] disabled:opacity-50"
+                            onClick={() => {
+                                if (suspended) return
+                                setDeleteOpen(true)
+                            }}
                         >
                             Delete
                             <Trash2 className="size-3.5" />
@@ -310,11 +316,31 @@ const Item_detail = () => {
                         }}
                     />
                     <ItemDeleteDialog
+                        title="Delete item"
                         open={deleteOpen}
                         onOpenChange={setDeleteOpen}
                         slug={item.slug}
                         name={item.name}
                         onDeleted={() => navigate('/items-list')}
+                    />
+                    <ItemDeleteDialog
+                        title="Delete photo"
+                        open={photoDeleteOpen}
+                        onOpenChange={setPhotoDeleteOpen}
+                        slug={item.slug}
+                        photoSlug={selectedPhoto?.slug}
+                        onDeleted={() => {
+                            if (!selectedPhoto) return
+                            setItem((current) =>
+                                current
+                                    ? {
+                                        ...current,
+                                        photos: (current.photos ?? []).filter((photo) => photo.slug !== selectedPhoto.slug),
+                                    }
+                                    : current,
+                            )
+                            setSelectedPhotoSlug(undefined)
+                        }}
                     />
                 </>
             )}

@@ -34,6 +34,7 @@ export type Item = {
   unit: string
   last_purchase_date: string
   photos?: ItemPhoto[]
+  is_active?: boolean
 }
 
 export type ItemDetail = {
@@ -51,6 +52,7 @@ export type ItemDetail = {
   description?: string
   remarks?: string
   photos?: ItemPhoto[]
+  is_active?: boolean
 }
 
 export type AddItemPayload = {
