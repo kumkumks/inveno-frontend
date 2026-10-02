@@ -94,3 +94,18 @@ export type MeResponse = {
     registered_on: string;
   } | null;
 };
+
+export type ItemActivityKind = 'incoming' | 'outgoing' | 'item_edit';
+
+export type ItemActivity = {
+  slug: string
+  kind: ItemActivityKind
+  action: string
+  recorded_on: string
+  recorded_by: {
+    slug: string
+    full_name: string
+    user_type: UserType
+  }
+  remarks: string
+}

@@ -25,7 +25,7 @@ type LocationState = {
 const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, me, isLoading } = useAuth()
+  const { login, me, ready } = useAuth()
   const from = (location.state as LocationState | null)?.from
   const redirectTo = from?.pathname
     ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
@@ -42,7 +42,7 @@ const LoginPage = () => {
 
   const handleLogin = async (data: LoginForm) => {
     try {
-      await signIn(data.email, data.password)
+      await login(data.email, data.password)
       reset()
       navigate(redirectTo, { replace: true })
     } catch (error: unknown) {
@@ -68,7 +68,7 @@ const LoginPage = () => {
     }
   }
 
-  if (isLoading) {
+  if (ready) {
     return <FullScreenStatus className="bg-white">Checking your session…</FullScreenStatus>
   }
 
