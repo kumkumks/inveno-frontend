@@ -68,7 +68,7 @@ const LoginPage = () => {
     }
   }
 
-  if (ready) {
+  if (!ready) {
     return <FullScreenStatus className="bg-white">Checking your session…</FullScreenStatus>
   }
 
