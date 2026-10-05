@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ListSearch, SortableHead, StatusPill, tableHeadClass } from '@/components/common/list-table'
@@ -26,7 +27,7 @@ function statusLabel(status: string) {
 
 
 const Purchase_list = () => {
-
+    const navigate = useNavigate()
     const { data: requests = [], error, loading } = useAsyncResource(listPurchaseRequests, [])
     const permissionDenied = Boolean(error && isPermissionError(error))
 
@@ -36,7 +37,7 @@ const Purchase_list = () => {
                 className="h2 break-words"
                 description="Manage your purchase request across the organization"
                 action={
-                    <Button variant="dark">
+                    <Button variant="dark" onClick={() => navigate('/purchase-add')}>
                         Create PR
                         <Plus size={16} className="ml-2 text-white" />
                     </Button>
