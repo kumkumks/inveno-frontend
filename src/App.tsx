@@ -9,6 +9,7 @@ import DashboardLayout from '@/layout/layout'
 import Item_list from '@/pages/item_list/item_list'
 import Item_add from '@/pages/item_add/item_add'
 import Item_detail from '@/pages/item-detail/item-detail'
+import Purchase_list from '@/pages/purchase/purchase-list'
 
 const App = () => {
   return (
@@ -23,6 +24,7 @@ const App = () => {
           <Route path='/items-list' element={<Item_list/>} />
           <Route path='/item-add' element={<Item_add/>} />
           <Route path='/item-detail/:slug' element={<Item_detail/>} />
+          <Route path='/purchase-requests' element={<Purchase_list/>} />
         </Route>
       </Route>
     </Routes>

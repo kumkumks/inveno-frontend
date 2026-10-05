@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button'
-import { ArrowUpDown, Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Table, TableHeader, TableRow, TableBody, TableCell, TableHead } from '@/components/ui/table'
-import { Input } from '@/components/ui/input'
 import { useNavigate } from 'react-router-dom'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { isPermissionError } from '@/lib/errors'
@@ -9,20 +8,9 @@ import { formatDate, formatStockQuantity } from '@/lib/format'
 import { listItems } from '@/services/items'
 import { AuthImage } from '@/components/common/auth-image'
 import { InlineStatus } from '@/components/common/inline-status'
+import { ListSearch, SortableHead, tableHeadClass } from '@/components/common/list-table'
 import { PageShell, PageTitle } from '@/components/common/page-shell'
 import { PermissionNotice } from '@/components/common/permission-notice'
-
-const sortableHeadClass =
-  'h-11 px-3 text-left text-[11px] font-medium uppercase tracking-wide text-gray-500'
-
-const SortableHead = ({ label }: { label: string }) => (
-  <TableHead className={sortableHeadClass}>
-    <span className='inline-flex items-center gap-1'>
-      {label}
-      <ArrowUpDown className='size-3 text-gray-400' />
-    </span>
-  </TableHead>
-)
 
 const Item_list = () => {
   const { data: itemList = [], error, loading } = useAsyncResource(listItems, [])
@@ -51,14 +39,7 @@ const Item_list = () => {
       </PageTitle>
       </section>
 
-      {!permissionDenied && (
-      <section className='search-section mb-6 mt-3'>
-      <div className='min-w-0 flex items-center gap-3'>
-        <Input  className='w-1/2 border-gray-300 rounded-md' type='text' placeholder='Search Item' />
-        <Button variant="dark">Search<Search size={16} className='ml-2 text-white' /></Button>
-      </div>
-      </section>
-      )}
+      {!permissionDenied && <ListSearch placeholder="Search Item" />}
 
       <InlineStatus loading={loading} loadingLabel="Loading items…" />
       {permissionDenied && <PermissionNotice action="cannot view items" />}
@@ -69,10 +50,10 @@ const Item_list = () => {
         <Table className='w-full min-w-[900px]'>
           <TableHeader>
             <TableRow className='border-b border-gray-200 hover:bg-transparent'>
-              <TableHead className={`${sortableHeadClass} w-14`}>SI No</TableHead>
+              <TableHead className={`${tableHeadClass} w-14`}>SI No</TableHead>
               <SortableHead label='Item/Description' />
-              <TableHead className={sortableHeadClass}>Part No</TableHead>
-              <TableHead className={sortableHeadClass}>Alternate Part No</TableHead>
+              <TableHead className={tableHeadClass}>Part No</TableHead>
+              <TableHead className={tableHeadClass}>Alternate Part No</TableHead>
               <SortableHead label='Location' />
               <SortableHead label='Qty in Stock' />
               <SortableHead label='Last Purchase Date' />

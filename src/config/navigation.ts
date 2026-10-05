@@ -1,4 +1,4 @@
-import { Home, Package, Warehouse, MapPin, Users, type LucideIcon } from 'lucide-react'
+import { ClipboardList, Home, MapPin, Package, Users, Warehouse, type LucideIcon } from 'lucide-react'
 
 export type SidebarMenu = {
   key: string
@@ -19,6 +19,12 @@ export const sidebarMenus: SidebarMenu[] = [
     label: 'Items',
     icon: Package,
     href: '/items-list',
+  },
+  {
+    key: 'purchases',
+    label: 'Purchases',
+    icon: ClipboardList,
+    href: '/purchase-requests',
   },
   {
     key: 'warehouses',

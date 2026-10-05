@@ -109,3 +109,28 @@ export type ItemActivity = {
   }
   remarks: string
 }
+
+export type PurchaseStatus =
+  | 'draft'
+  | 'submitted'
+  | 'approved'
+  | 'declined'
+  | 'revision_requested'
+
+  export type PurchaseRequest = {
+    slug: string
+    title: string
+    status: PurchaseStatus
+    space: string | null
+    created_by: string
+    created_at: string
+    created_by_role: UserType
+    notes?: string
+    review_reason?: string
+    lines?: {
+      slug: string
+      description: string
+      quantity: string
+      unit: string
+    }[]
+  }
