@@ -51,3 +51,16 @@ export function StatusPill({
     </span>
   )
 }
+
+export const purchaseStatusStyle = {
+  approved: 'bg-[#e7f6e4] text-[#3d9a4a]',
+  submitted: 'bg-[#fff6d8] text-[#b8860b]',
+  revision_requested: 'bg-[#fde8dc] text-[#c47b5a]',
+  declined: 'bg-[#fde8e8] text-[#e11d48]',
+  draft: 'bg-gray-100 text-gray-500',
+} as const
+
+export function statusLabel(status: string) {
+  const text = status.replaceAll('_', ' ')
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
