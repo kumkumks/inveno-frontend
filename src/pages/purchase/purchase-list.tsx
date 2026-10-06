@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ListSearch, SortableHead, StatusPill, tableHeadClass } from '@/components/common/list-table'
+import { ListSearch, SortableHead, StatusPill, purchaseStatusStyle, statusLabel, tableHeadClass } from '@/components/common/list-table'
 import { PageShell, PageTitle } from '@/components/common/page-shell'
 import { formatDate } from '@/lib/format'
 import { displayRole } from '@/lib/roles'
@@ -11,20 +11,6 @@ import { isPermissionError } from '@/lib/errors'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { InlineStatus } from '@/components/common/inline-status'
 import { PermissionNotice } from '@/components/common/permission-notice'
-
-const statusStyle = {
-    approved: 'bg-[#e7f6e4] text-[#3d9a4a]',
-    submitted: 'bg-[#fff6d8] text-[#b8860b]',
-    revision_requested: 'bg-[#fde8dc] text-[#c47b5a]',
-    declined: 'bg-[#fde8e8] text-[#e11d48]',
-    draft: 'bg-gray-100 text-gray-500',
-} as const
-
-function statusLabel(status: string) {
-    const text = status.replaceAll('_', ' ')
-    return text.charAt(0).toUpperCase() + text.slice(1)
-}
-
 
 const Purchase_list = () => {
     const navigate = useNavigate()
@@ -63,9 +49,9 @@ const Purchase_list = () => {
                     </TableHeader>
                     <TableBody className="[&_tr:last-child]:border-b">
                         {requests.map((row) => (
-                            <TableRow key={row.slug} className="border-b border-gray-200 hover:bg-gray-50">
+                            <TableRow key={row.slug} onClick={() => navigate(`/purchase-requests/${row.slug}`)} className="cursor-pointer border-b border-gray-200 hover:bg-gray-50">
                                 <TableCell className="px-3 py-3">
-                                    <StatusPill className={statusStyle[row.status]}>{statusLabel(row.status)}</StatusPill>
+                                    <StatusPill className={purchaseStatusStyle[row.status]}>{statusLabel(row.status)}</StatusPill>
                                 </TableCell>
                                 <TableCell className="px-3 py-3 text-sm text-black">{row.title}</TableCell>
                                 <TableCell className="px-3 py-3 text-sm text-black">{row.space || '-'}</TableCell>

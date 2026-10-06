@@ -11,6 +11,7 @@ import Item_add from '@/pages/item_add/item_add'
 import Item_detail from '@/pages/item-detail/item-detail'
 import Purchase_list from '@/pages/purchase/purchase-list'
 import Purchase_add from '@/pages/purchase/purchase-add'
+import Purchase_detail from '@/pages/purchase/purchase-detail'
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
           <Route path='/item-detail/:slug' element={<Item_detail/>} />
           <Route path='/purchase-requests' element={<Purchase_list/>} />
           <Route path='/purchase-add' element={<Purchase_add/>} />
+          <Route path='/purchase-requests/:slug' element={<Purchase_detail/>} />
         </Route>
       </Route>
     </Routes>

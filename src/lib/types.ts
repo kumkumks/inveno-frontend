@@ -132,6 +132,8 @@ export type PurchaseStatus =
       description: string
       quantity: string
       unit: string
+      item?: string | null
+      awarded_vendor?: string | null
     }[]
   }
 
