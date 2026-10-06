@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FormField } from '@/components/common/form-field'
 import { InlineStatus } from '@/components/common/inline-status'
-import { purchaseLineFormSchema, type PurchaseLineForm } from '@/lib/schemas/purchase'
+import { purchaseLineFormSchema, SELECT_NONE, type PurchaseLineForm } from '@/lib/schemas/purchase'
 import type { Item } from '@/lib/types'
 
 const fieldClass = 'h-8 w-full rounded-sm border border-gray-400 bg-white text-sm text-gray-800'
@@ -51,6 +51,7 @@ export function PurchaseLineDialog({
   } = useForm<PurchaseLineForm>({
     resolver: zodResolver(purchaseLineFormSchema),
     defaultValues: emptyLine,
+    mode: 'onChange',
   })
 
   const close = (next: boolean) => {
@@ -85,9 +86,9 @@ export function PurchaseLineDialog({
               name="item"
               render={({ field }) => (
                 <Select
-                  value={field.value || null}
+                  value={field.value || SELECT_NONE}
                   onValueChange={(value) => {
-                    const slug = value ?? ''
+                    const slug = value === SELECT_NONE ? '' : value ?? ''
                     field.onChange(slug)
                     const item = items.find((entry) => entry.slug === slug)
                     if (!item) return
@@ -99,6 +100,7 @@ export function PurchaseLineDialog({
                     <SelectValue placeholder="Select catalog item" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={SELECT_NONE}>No catalog item</SelectItem>
                     {items.map((item) => (
                       <SelectItem key={item.slug} value={item.slug}>
                         {item.name}

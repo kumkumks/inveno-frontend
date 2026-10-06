@@ -135,16 +135,16 @@ export type PurchaseStatus =
     }[]
   }
 
-  export type PurchaseLinePayload = {
-    description: string
-    quantity: string
-    unit: string
-    item?: string | null
-  }
-  
-  export type CreatePurchasePayload = {
-    title: string
-    notes: string
-    space: string | null
-    lines: PurchaseLinePayload[]
-  }
+export type PurchaseLinePayload = {
+  description: string
+  quantity: string
+  unit: string
+  item?: string
+}
+
+export type CreatePurchasePayload = {
+  title: string
+  notes: string
+  space?: string
+  lines: PurchaseLinePayload[]
+}

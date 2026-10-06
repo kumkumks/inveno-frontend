@@ -18,9 +18,10 @@ import { PurchaseLineDialog } from '@/components/common/purchase-line-dialog'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { fieldMessage, formatApiError, isPermissionError } from '@/lib/errors'
 import { listSpaces } from '@/lib/list'
-import { purchaseAddSchema, type PurchaseAddForm } from '@/lib/schemas/purchase'
+import { purchaseAddSchema, SELECT_NONE, type PurchaseAddForm } from '@/lib/schemas/purchase'
 import { listItems } from '@/services/items'
 import { createPurchaseRequest } from '@/services/purchase'
+import type { CreatePurchasePayload, PurchaseLinePayload } from '@/lib/types'
 
 const fieldClass = 'h-10 w-full rounded-xl border-gray-200 bg-white px-4 text-sm text-gray-800'
 const textareaClass =
@@ -52,20 +53,21 @@ const Purchase_add = () => {
   const goBack = () => navigate('/purchase-requests')
 
   const onSave = async (data: PurchaseAddForm) => {
+    const payload: CreatePurchasePayload = {
+      title: data.title.trim(),
+      notes: data.notes.trim(),
+      lines: data.lines
+        .filter((line) => line.description && line.quantity && line.unit)
+        .map(({ description, quantity, unit, item }): PurchaseLinePayload => {
+          const line: PurchaseLinePayload = { description, quantity, unit }
+          if (item && catalogSlugs.has(item)) line.item = item
+          return line
+        }),
+    }
+    if (data.space) payload.space = data.space
+
     try {
-      await createPurchaseRequest({
-        title: data.title.trim(),
-        notes: data.notes.trim(),
-        space: data.space || null,
-        lines: data.lines
-          .filter((line) => line.description && line.quantity && line.unit)
-          .map(({ description, quantity, unit, item }) => ({
-            description,
-            quantity,
-            unit,
-            item: item && catalogSlugs.has(item) ? item : null,
-          })),
-      })
+      await createPurchaseRequest(payload)
       navigate('/purchase-requests')
     } catch (error) {
       const body = isAxiosError(error) ? error.response?.data : undefined
@@ -143,11 +145,15 @@ const Purchase_add = () => {
               control={control}
               name="space"
               render={({ field }) => (
-                <Select value={field.value || null} onValueChange={(value) => field.onChange(value ?? '')}>
+                <Select
+                  value={field.value || SELECT_NONE}
+                  onValueChange={(value) => field.onChange(value === SELECT_NONE ? '' : value ?? '')}
+                >
                   <SelectTrigger id="space" className={fieldClass} disabled={isSubmitting}>
                     <SelectValue placeholder="Select space" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={SELECT_NONE}>No space</SelectItem>
                     {spaceOptions.map((option) => (
                       <SelectItem key={option.slug} value={option.slug}>
                         {option.name}
@@ -197,7 +203,7 @@ const Purchase_add = () => {
                         {catalogItems.find((item) => item.slug === line.item)?.name ?? line.item}
                       </Badge>
                     ) : (
-                      <span className="text-sm text-gray-400">{line.item ?? 'no catalog item selected'}</span>
+                      <span className="text-sm text-gray-400">{line.item ?? '—'}</span>
                     )}
                   </TableCell>
                   <TableCell className="px-3 py-3 text-sm text-neutral-800">{line.unit || '—'}</TableCell>
