@@ -24,6 +24,7 @@ import {
   listCategories,
   listWarehouses,
 } from '@/services/items'
+import { SELECT_NONE } from '@/lib/schemas/purchase'
 
 const fieldClass =
   'h-8 w-full rounded-sm border border-gray-400 bg-white text-sm text-gray-800'
@@ -289,24 +290,19 @@ export function ItemForm({
               name="category"
               render={({ field }) => (
                 <Select
-                  value={field.value || null}
-                  onValueChange={(value) => field.onChange(value ?? '')}
+                  value={field.value || SELECT_NONE}
+                  onValueChange={(value) => field.onChange(value === SELECT_NONE ? '' : value ?? '')}
                 >
                   <SelectTrigger id="category" className={fieldClass}>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent className="text-gray-800">
-                    {categories.length === 0 ? (
-                      <SelectItem value="__empty" disabled>
-                        No categories yet
-                      </SelectItem>
-                    ) : (
-                      categories.map((category) => (
-                        <SelectItem key={category.slug} value={category.slug}>
-                          {category.name}
-                        </SelectItem>
-                      ))
-                    )}
+                  <SelectItem value={SELECT_NONE}>No space</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.slug} value={category.slug}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
                   </SelectContent>
                 </Select>
               )}
