@@ -1,4 +1,5 @@
 import type { NamedOption } from '@/lib/types'
+import api from '@/services/api'
 
 export function unwrapList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[]
@@ -23,4 +24,9 @@ export function toNamedOptions(data: unknown): NamedOption[] {
     if (!name || !slug) return []
     return [{ slug, name }]
   })
+}
+
+export async function listSpaces() {
+  const { data } = await api.get('/api/orgs/spaces/')
+  return toNamedOptions(data)
 }

@@ -134,3 +134,17 @@ export type PurchaseStatus =
       unit: string
     }[]
   }
+
+  export type PurchaseLinePayload = {
+    description: string
+    quantity: string
+    unit: string
+    item?: string | null
+  }
+  
+  export type CreatePurchasePayload = {
+    title: string
+    notes: string
+    space: string | null
+    lines: PurchaseLinePayload[]
+  }
