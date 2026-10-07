@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react'
-import { CircleCheck, CircleX, X } from 'lucide-react'
+import { CircleAlert, CircleCheck, X } from 'lucide-react'
 import { FormField } from '@/components/common/form-field'
 import { InlineStatus } from '@/components/common/inline-status'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { statusLabel } from '@/components/common/list-table'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
@@ -106,13 +101,16 @@ export function PurchaseTrailDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={close}>
-      <DialogContent
+    <Sheet open={open} onOpenChange={close}>
+      <SheetContent
+        side="right"
         showCloseButton={false}
-        className="max-h-[90vh] max-w-xl gap-6 overflow-y-auto rounded-2xl p-5 sm:p-6"
+        overlayClassName="bg-black/40 supports-backdrop-filter:backdrop-blur-none"
+        className="top-[65px]! h-[calc(100vh-65px)]! w-full gap-0 data-[side=right]:w-full overflow-y-auto border-l border-gray-200 bg-white p-0 sm:max-w-xl!"
       >
-        <DialogTitle className="sr-only">Approval trail</DialogTitle>
-        <DialogClose
+        <SheetTitle className="sr-only">Approval trail</SheetTitle>
+        <div className="flex min-h-64 flex-1 flex-col gap-6 overflow-y-auto px-4 pt-4 pb-6 sm:px-5">
+        <SheetClose
           render={
             <Button
               type="button"
@@ -123,7 +121,7 @@ export function PurchaseTrailDialog({
         >
           <X className="size-3.5" />
           Close
-        </DialogClose>
+        </SheetClose>
 
         <InlineStatus loading={loading} loadingLabel="Loading trail…" />
         {permissionDenied && <PermissionNotice action="cannot view this purchase request trail" />}
@@ -158,10 +156,10 @@ export function PurchaseTrailDialog({
                         <p className={`text-sm font-medium ${trailActionClass(event.action)}`}>
                           {trailActionLabel(event.action)}
                         </p>
-                        <p className="mt-1 text-base font-medium text-neutral-900">{event.actor_slug}</p>
-                        <p className="text-xs text-gray-400">{spaceName || 'Organization level'}</p>
+                        <p className="mt-3 text-lg font-medium text-neutral-800">{event.actor_slug}</p>
+                        <p className="text-sm text-gray-400">{spaceName || 'Organization level'}</p>
                       </div>
-                      <p className="shrink-0 pt-0.5 text-xs text-gray-400">
+                      <p className="shrink-0 pt-0.5 font-mono text-xs text-gray-500">
                         {formatDate(event.created_at, 'time').toLowerCase().replace(' ', '')}
                       </p>
                     </button>
@@ -172,17 +170,18 @@ export function PurchaseTrailDialog({
             })}
           </ol>
         )}
+        </div>
 
-        <section className="flex flex-col gap-3">
+        <section className="flex shrink-0 flex-col gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:px-5">
           <h3 className="text-sm font-semibold text-neutral-900">Verify one event</h3>
           {verifyError ? (
-            <div className="flex items-center gap-2 rounded-lg bg-[#fde8e8] px-3 py-2.5 text-sm text-[#e11d48]">
-              <CircleX className="size-4 shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg border border-[#f5b5b5] bg-[#fde8e8] px-3 py-2 text-sm text-[#e11d48]">
+              <CircleAlert className="size-4 shrink-0" />
               {verifyError}
             </div>
           ) : null}
           {verifyOk ? (
-            <div className="flex items-center gap-2 rounded-lg bg-[#e7f6e4] px-3 py-2.5 text-sm text-[#3d9a4a]">
+            <div className="flex items-center gap-2 rounded-lg border border-[#bfe3b9] bg-[#e7f6e4] px-3 py-2 text-sm text-[#3d9a4a]">
               <CircleCheck className="size-4 shrink-0" />
               {verifyOk}
             </div>
@@ -192,7 +191,7 @@ export function PurchaseTrailDialog({
               id="trail-hash"
               value={hash}
               onChange={(event) => setHash(event.target.value)}
-              className="h-9 rounded-md border-gray-300"
+              className="h-9 rounded-md border-gray-300 text-black"
             />
           </FormField>
           <FormField label="Signature" htmlFor="trail-signature" labelClassName="text-sm font-normal text-gray-800">
@@ -200,7 +199,7 @@ export function PurchaseTrailDialog({
               id="trail-signature"
               value={signature}
               onChange={(event) => setSignature(event.target.value)}
-              className="h-9 rounded-md border-gray-300"
+              className="h-9 rounded-md border-gray-300 text-black"
             />
           </FormField>
           <Button
@@ -213,8 +212,8 @@ export function PurchaseTrailDialog({
             {verifying ? 'Verifying…' : 'Verify'}
           </Button>
         </section>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
