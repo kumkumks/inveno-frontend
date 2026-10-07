@@ -1,5 +1,5 @@
 import { unwrapList } from '@/lib/list'
-import type { PurchaseRequest, PurchaseTrailEvent } from '@/lib/types'
+import type { ProcessEventVerifyResult, PurchaseRequest, PurchaseTrailEvent } from '@/lib/types'
 import api from './api'
 
 export async function listPurchaseRequests() {
@@ -15,4 +15,12 @@ export async function getPurchaseRequest(slug: string) {
 export async function listPurchaseTrail(slug: string) {
   const { data } = await api.get(`/api/orgs/purchase-requests/${slug}/trail/`)
   return unwrapList<PurchaseTrailEvent>(data)
+}
+
+export async function verifyProcessEvent(content_hash: string, signature: string) {
+  const { data } = await api.post<ProcessEventVerifyResult>('/api/orgs/process-events/verify/', {
+    content_hash,
+    signature,
+  })
+  return data
 }

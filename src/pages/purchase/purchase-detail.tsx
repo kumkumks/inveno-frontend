@@ -241,7 +241,7 @@ const Purchase_detail = () => {
         open={trailOpen}
         onOpenChange={setTrailOpen}
         slug={slug}
-        title={request?.title}
+        spaceName={spaceName || request?.space || undefined}
       />
     </PageShell>
   )

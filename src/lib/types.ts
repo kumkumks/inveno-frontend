@@ -165,3 +165,8 @@ export type PurchaseTrailEvent = {
   content_hash: string
   signature: string
 }
+
+export type ProcessEventVerifyResult = {
+  valid: boolean
+  detail?: string
+}
