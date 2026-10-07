@@ -1,6 +1,5 @@
-import type { CreatePurchasePayload } from "@/lib/types"
+import type { CreatePurchasePayload, PurchaseExportFormat, PurchaseRequest as PurchaseRequestType } from "@/lib/types"
 import api from "./api"
-import type { PurchaseRequest as PurchaseRequestType } from "@/lib/types"
 import { downloadBlob, filenameFromDisposition } from "@/lib/download"
 
 export async function createPurchaseRequest(payload: CreatePurchasePayload) {
@@ -20,9 +19,9 @@ async function messageFromBlobError(error: unknown) {
   }
 }
 
-export async function exportPurchaseRequestXlsx(slug: string, title?: string) {
+export async function exportPurchaseRequest(slug: string, format: PurchaseExportFormat, title?: string) {
   try {
-    const response = await api.get(`/api/orgs/purchase-requests/${slug}/export/?format=xlsx`, {
+    const response = await api.get(`/api/orgs/purchase-requests/${slug}/export/?format=${format}`, {
       responseType: 'blob',
       timeout: 30000,
     })
@@ -35,11 +34,15 @@ export async function exportPurchaseRequestXlsx(slug: string, title?: string) {
 
     const filename = filenameFromDisposition(
       response.headers['content-disposition'],
-      `${title || slug}.xlsx`,
+      `${title || slug}.${format}`,
     )
     downloadBlob(response.data, filename)
   } catch (error) {
     const message = await messageFromBlobError(error)
     throw message ? new Error(message) : error
   }
+}
+
+export async function exportPurchaseRequestXlsx(slug: string, title?: string) {
+  return exportPurchaseRequest(slug, 'xlsx', title)
 }

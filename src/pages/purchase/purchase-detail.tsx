@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, FileDown, FileSpreadsheet, History, Pencil } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -8,14 +8,14 @@ import { InlineStatus } from '@/components/common/inline-status'
 import { tableHeadClass } from '@/components/common/list-table'
 import { PageShell, PageTitle } from '@/components/common/page-shell'
 import { PermissionNotice } from '@/components/common/permission-notice'
+import { PurchaseTrailDialog } from '@/components/common/purchase-trail-dialog'
 import { useAsyncResource } from '@/hooks/use-async-resource'
-import { isPermissionError } from '@/lib/errors'
-import { useState } from 'react'
+import { formatApiError, isPermissionError } from '@/lib/errors'
 import { listSpaces } from '@/lib/list'
 import { displayRole } from '@/lib/roles'
+import type { PurchaseExportFormat } from '@/lib/types'
+import { exportPurchaseRequest } from '@/services/purchase'
 import { getPurchaseRequest } from '@/services/purchases'
-import { exportPurchaseRequestXlsx } from '@/services/purchase'
-import { formatApiError } from '@/lib/errors'
 
 function ActionCard({
   title,
@@ -67,21 +67,22 @@ const Purchase_detail = () => {
   const lines = request?.lines ?? []
   const showRevisionBanner = request?.status === 'revision_requested'
 
-  const [exporting, setExporting] = useState(false)
-const [exportError, setExportError] = useState('')
+  const [exporting, setExporting] = useState<PurchaseExportFormat | null>(null)
+  const [exportError, setExportError] = useState('')
+  const [trailOpen, setTrailOpen] = useState(false)
 
-const onExportXlsx = async () => {
-  if (!slug || exporting) return
-  setExporting(true)
-  setExportError('')
-  try {
-    await exportPurchaseRequestXlsx(slug, request?.title)
-  } catch (err) {
-    setExportError(formatApiError(err))
-  } finally {
-    setExporting(false)
+  const onExport = async (format: PurchaseExportFormat) => {
+    if (!slug || exporting) return
+    setExporting(format)
+    setExportError('')
+    try {
+      await exportPurchaseRequest(slug, format, request?.title)
+    } catch (err) {
+      setExportError(formatApiError(err))
+    } finally {
+      setExporting(null)
+    }
   }
-}
 
   return (
     <PageShell className="max-w-full bg-white">
@@ -182,19 +183,38 @@ const onExportXlsx = async () => {
             </ActionCard>
 
             <ActionCard title="Export & Audit" description="Download this request or review the approval history." tone="green">
-              <Button type="button" variant="dark" className="h-9 rounded-full px-4">
+              <Button
+                type="button"
+                variant="dark"
+                disabled={Boolean(exporting)}
+                className="h-9 rounded-full px-4"
+                onClick={() => onExport('pdf')}
+              >
                 <FileDown className="size-4" />
-                Export PDF
+                {exporting === 'pdf' ? 'Exporting…' : 'Export PDF'}
               </Button>
-              <Button type="button" onClick={onExportXlsx} disabled={exporting} className="h-9 rounded-full bg-emerald-700 px-4 text-white hover:bg-emerald-800">
+              <Button
+                type="button"
+                disabled={Boolean(exporting)}
+                className="h-9 rounded-full bg-emerald-700 px-4 text-white hover:bg-emerald-800"
+                onClick={() => onExport('xlsx')}
+              >
                 <FileSpreadsheet className="size-4" />
-                {exporting ? 'Exporting…' : 'Export XLSX'}
+                {exporting === 'xlsx' ? 'Exporting…' : 'Export XLSX'}
               </Button>
-              <Button type="button" className="h-9 rounded-full px-4 bg-amber-50 hover:bg-gray-300 hover:text-gray-700">
+              <Button
+                type="button"
+                className="h-9 rounded-full px-4 bg-amber-50 hover:bg-gray-300 hover:text-gray-700"
+                onClick={() => setTrailOpen(true)}
+              >
                 <History className="size-4" />
                 View trail
               </Button>
-              <InlineStatus loading={exporting} loadingLabel="Preparing spreadsheet…" className="w-full" />
+              <InlineStatus
+                loading={Boolean(exporting)}
+                loadingLabel={exporting === 'pdf' ? 'Preparing PDF…' : 'Preparing spreadsheet…'}
+                className="w-full"
+              />
               {exportError && isPermissionError(exportError) ? (
                 <PermissionNotice action="cannot export this purchase request" />
               ) : (
@@ -216,6 +236,13 @@ const onExportXlsx = async () => {
           </div>
         </div>
       )}
+
+      <PurchaseTrailDialog
+        open={trailOpen}
+        onOpenChange={setTrailOpen}
+        slug={slug}
+        title={request?.title}
+      />
     </PageShell>
   )
 }

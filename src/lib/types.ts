@@ -150,3 +150,18 @@ export type CreatePurchasePayload = {
   space?: string
   lines: PurchaseLinePayload[]
 }
+
+export type PurchaseExportFormat = 'pdf' | 'xlsx'
+
+export type PurchaseTrailEvent = {
+  slug: string
+  action: string
+  actor_slug: string
+  actor_user_type: UserType
+  created_at: string
+  resource_slug: string
+  resource_type: string
+  prev_hash: string
+  content_hash: string
+  signature: string
+}
