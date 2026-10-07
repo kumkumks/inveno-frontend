@@ -10,9 +10,12 @@ import { PageShell, PageTitle } from '@/components/common/page-shell'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { isPermissionError } from '@/lib/errors'
+import { useState } from 'react'
 import { listSpaces } from '@/lib/list'
 import { displayRole } from '@/lib/roles'
 import { getPurchaseRequest } from '@/services/purchases'
+import { exportPurchaseRequestXlsx } from '@/services/purchase'
+import { formatApiError } from '@/lib/errors'
 
 function ActionCard({
   title,
@@ -64,16 +67,36 @@ const Purchase_detail = () => {
   const lines = request?.lines ?? []
   const showRevisionBanner = request?.status === 'revision_requested'
 
+  const [exporting, setExporting] = useState(false)
+const [exportError, setExportError] = useState('')
+
+const onExportXlsx = async () => {
+  if (!slug || exporting) return
+  setExporting(true)
+  setExportError('')
+  try {
+    await exportPurchaseRequestXlsx(slug, request?.title)
+  } catch (err) {
+    setExportError(formatApiError(err))
+  } finally {
+    setExporting(false)
+  }
+}
+
   return (
     <PageShell className="max-w-full bg-white">
       <PageTitle
         className="h2 wrap-break-word pr-2"
         description={request ? subtitle : 'Purchase request details'}
         action={
-          <Button type="button" variant="outline" className="h-9 shrink-0 rounded-full px-4" onClick={() => navigate('/purchase-requests')}>
-            <ArrowLeft className="size-4" />
-            Go back
-          </Button>
+          <Button
+          variant="gray"
+          className="h-8 w-fit rounded-lg bg-gray-100 px-3 text-sm font-normal text-gray-800 hover:bg-gray-200"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="size-4" />
+          Go back
+      </Button>
         }
       >
         {request?.title || 'Purchase request'}
@@ -88,7 +111,7 @@ const Purchase_detail = () => {
           {request.notes ? <p className="max-w-4xl text-sm leading-6 text-neutral-800">{request.notes}</p> : null}
 
           {showRevisionBanner && (
-            <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-300 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-medium text-amber-900">
                   <Pencil className="size-3.5" />
@@ -150,10 +173,10 @@ const Purchase_detail = () => {
               <Button type="button" variant="dark" className="h-9 rounded-full px-4">
                 Approve
               </Button>
-              <Button type="button" variant="outline" className="h-9 rounded-full px-4">
+              <Button type="button"  className="h-9 rounded-full px-4 bg-transparent border-blue-200 hover:bg-blue-100 hover:text-gray-900">
                 Request revision
               </Button>
-              <Button type="button" variant="ghost" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
+              <Button type="button" variant="destructive" className="rounded-2xl">
                 Decline
               </Button>
             </ActionCard>
@@ -163,24 +186,30 @@ const Purchase_detail = () => {
                 <FileDown className="size-4" />
                 Export PDF
               </Button>
-              <Button type="button" variant="ghost" className="h-9 rounded-full bg-emerald-700 px-4 text-white hover:bg-emerald-800">
+              <Button type="button" onClick={onExportXlsx} disabled={exporting} className="h-9 rounded-full bg-emerald-700 px-4 text-white hover:bg-emerald-800">
                 <FileSpreadsheet className="size-4" />
-                Export XLSX
+                {exporting ? 'Exporting…' : 'Export XLSX'}
               </Button>
-              <Button type="button" variant="outline" className="h-9 rounded-full px-4">
+              <Button type="button" className="h-9 rounded-full px-4 bg-amber-50 hover:bg-gray-300 hover:text-gray-700">
                 <History className="size-4" />
                 View trail
               </Button>
+              <InlineStatus loading={exporting} loadingLabel="Preparing spreadsheet…" className="w-full" />
+              {exportError && isPermissionError(exportError) ? (
+                <PermissionNotice action="cannot export this purchase request" />
+              ) : (
+                <InlineStatus error={exportError} className="w-full" />
+              )}
             </ActionCard>
 
             <ActionCard title="Manage purchase request" description="Review the details, then choose your next step." tone="amber">
               <Button type="button" variant="dark" className="h-9 rounded-full px-4">
                 Submit request
               </Button>
-              <Button type="button" variant="outline" className="h-9 rounded-full px-4">
+              <Button type="button"  className="bg-amber-100 hover:bg-amber-200  h-9 rounded-full px-4">
                 Edit details
               </Button>
-              <Button type="button" variant="ghost" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
+              <Button type="button" variant="destructive" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
                 Delete request
               </Button>
             </ActionCard>

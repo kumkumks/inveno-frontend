@@ -14,6 +14,9 @@ export function formatApiError(error: unknown): string {
   const ax = error as AxiosError<Record<string, unknown>>;
   const data = ax.response?.data;
   if (!data) return ax.message || 'Request failed';
+  if (typeof Blob !== 'undefined' && data instanceof Blob) {
+    return ax.message || 'Request failed';
+  }
 
   if (typeof data.detail === 'string') return data.detail;
 

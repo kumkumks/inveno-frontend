@@ -120,3 +120,4 @@ export async function listItemActivity(slug: string) {
   const { data } = await api.get(`/api/orgs/items/${slug}/activity/`)
   return unwrapList<ItemActivity>(data)
 }
+

@@ -126,7 +126,7 @@ const Purchase_add = () => {
         className="h2 break-words"
         description="Create a new purchase request"
         action={
-          <Button type="button" variant="outline" className="h-9 rounded-full px-4" onClick={goBack}>
+          <Button type="button" variant="dark" className="h-8 w-fit rounded-lg bg-gray-100 px-3 text-sm font-normal text-gray-800 hover:bg-gray-200" onClick={goBack}>
             <ArrowLeft className="size-4" />
             Go back
           </Button>
