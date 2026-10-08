@@ -172,6 +172,8 @@ const Purchase_detail = () => {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
+            {
+              (  request?.status === 'approved' || request?.status === 'submitted') && (
             <ActionCard title="Operation actions" description="Select the next step for this request." tone="blue">
               <Button type="button" variant="dark" className="h-9 rounded-full px-4">
                 Approve
@@ -183,7 +185,9 @@ const Purchase_detail = () => {
                 Decline
               </Button>
             </ActionCard>
-
+          )}
+          {
+            (request?.status === 'draft' || request?.status === 'revision_requested'  || request?.status === 'approved' || request?.status === 'submitted' || request?.status === 'declined') && (
             <ActionCard title="Export & Audit" description="Download this request or review the approval history." tone="green">
               <Button
                 type="button"
@@ -223,7 +227,9 @@ const Purchase_detail = () => {
                 <InlineStatus error={exportError} className="w-full" />
               )}
             </ActionCard>
-
+          )}
+           {
+            (request?.status === 'draft' || request?.status === 'revision_requested') && (
             <ActionCard title="Manage purchase request" description="Review the details, then choose your next step." tone="amber">
               <Button type="button" variant="dark" className="h-9 rounded-full px-4">
                 Submit request
@@ -237,10 +243,14 @@ const Purchase_detail = () => {
               >
                 Edit details
               </Button>
-              <Button type="button" onClick={() => setDeleteOpen(true)} variant="destructive" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
+              <Button type="button" onClick={() => setDeleteOpen(true)}
+              disabled={!canEditPurchase(request?.status)}
+              title={canEditPurchase(request?.status) ? undefined : 'Only drafts and requests with changes requested can be edited'}
+               variant="destructive" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
                 Delete request
               </Button>
             </ActionCard>
+          )}
           </div>
         </div>
       )}
