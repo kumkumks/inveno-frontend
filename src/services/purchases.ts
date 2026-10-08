@@ -24,3 +24,8 @@ export async function verifyProcessEvent(content_hash: string, signature: string
   })
   return data
 }
+
+export async function submitPurchaseRequest(slug: string) {
+  const { data } = await api.post<PurchaseRequest>(`/api/orgs/purchase-requests/${slug}/submit/`)
+  return data
+}

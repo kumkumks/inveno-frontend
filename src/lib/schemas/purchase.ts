@@ -22,3 +22,4 @@ export const purchaseAddSchema = z.object({
 })
 
 export type PurchaseAddForm = z.infer<typeof purchaseAddSchema>
+

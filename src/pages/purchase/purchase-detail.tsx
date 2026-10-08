@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { InlineStatus } from '@/components/common/inline-status'
-import { tableHeadClass } from '@/components/common/list-table'
+import { StatusPill, purchaseStatusStyle, statusLabel, tableHeadClass } from '@/components/common/list-table'
 import { PageShell, PageTitle } from '@/components/common/page-shell'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { PurchaseTrailDialog } from '@/components/common/purchase-trail-dialog'
@@ -17,7 +17,7 @@ import { ConfirmDeleteDialog } from '@/components/common/confirm-delete-dialog'
 import { displayRole } from '@/lib/roles'
 import type { PurchaseExportFormat } from '@/lib/types'
 import { deletePurchaseRequest, exportPurchaseRequest } from '@/services/purchase'
-import { getPurchaseRequest } from '@/services/purchases'
+import { getPurchaseRequest, submitPurchaseRequest } from '@/services/purchases'
 
 function ActionCard({
   title,
@@ -50,10 +50,12 @@ function ActionCard({
   )
 }
 
+
+
 const Purchase_detail = () => {
   const { slug } = useParams()
   const navigate = useNavigate()
-  const { data: request, error: loadError, loading } = useAsyncResource(
+  const { data: request, error: loadError, loading, setData } = useAsyncResource(
     () => getPurchaseRequest(slug as string),
     [slug],
     { enabled: Boolean(slug) },
@@ -75,6 +77,8 @@ const Purchase_detail = () => {
   const [exportError, setExportError] = useState('')
   const [trailOpen, setTrailOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const onExport = async (format: PurchaseExportFormat) => {
     if (!slug || exporting) return
     setExporting(format)
@@ -85,6 +89,19 @@ const Purchase_detail = () => {
       setExportError(formatApiError(err))
     } finally {
       setExporting(null)
+    }
+  }
+
+  const onSubmit = async () => {
+    if (!slug || request?.status !== 'draft' || submitting) return
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      setData(await submitPurchaseRequest(slug))
+    } catch (err) {
+      setSubmitError(formatApiError(err))
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -113,6 +130,7 @@ const Purchase_detail = () => {
 
       {request && (
         <div className="flex flex-col gap-6">
+          <StatusPill className={`w-fit ${purchaseStatusStyle[request.status]}`}>{statusLabel(request.status)}</StatusPill>
           {request.notes ? <p className="max-w-4xl text-sm leading-6 text-neutral-800">{request.notes}</p> : null}
 
           {showRevisionBanner && (
@@ -245,9 +263,22 @@ const Purchase_detail = () => {
            {
             (request?.status === 'draft' || request?.status === 'revision_requested') && (
             <ActionCard title="Manage purchase request" description="Review the details, then choose your next step." tone="amber">
-              <Button type="button" variant="dark" className="h-10 rounded-lg px-4">
-                Submit request
-              </Button>
+              {request?.status === 'draft' && (
+                <Button
+                  type="button"
+                  variant="dark"
+                  className="h-10 rounded-lg px-4"
+                  disabled={submitting}
+                  onClick={() => void onSubmit()}
+                >
+                  {submitting ? 'Submitting…' : 'Submit request'}
+                </Button>
+              )}
+              {submitError && isPermissionError(submitError) ? (
+                <PermissionNotice action="cannot submit this purchase request" />
+              ) : (
+                <InlineStatus error={submitError} className="w-full" />
+              )}
               <Button
                 type="button"
                 className="bg-amber-100 hover:bg-amber-200  h-10 rounded-lg px-4"
