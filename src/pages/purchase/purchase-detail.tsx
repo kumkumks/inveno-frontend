@@ -23,11 +23,13 @@ function ActionCard({
   title,
   description,
   tone,
+  actionsClassName,
   children,
 }: {
   title: string
   description: string
   tone?: 'blue' | 'green' | 'amber'
+  actionsClassName?: string
   children: ReactNode
 }) {
   const toneClass =
@@ -43,7 +45,7 @@ function ActionCard({
     <section className={`rounded-2xl border p-4 sm:p-5 ${toneClass}`}>
       <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
       <p className="mt-1 text-sm text-gray-500">{description}</p>
-      <div className="mt-4 flex flex-wrap gap-2">{children}</div>
+      <div className={`mt-4 flex flex-wrap gap-2 ${actionsClassName ?? ''}`}>{children}</div>
     </section>
   )
 }
@@ -124,7 +126,7 @@ const Purchase_detail = () => {
                   {request.review_reason || 'Please update this request before resubmission.'}
                 </p>
               </div>
-              <Button type="button" variant="outline" className="h-8 shrink-0 rounded-full px-3 text-xs">
+              <Button type="button" variant="outline" className="h-8 shrink-0 rounded-lg px-3 text-xs">
                 Learn more
               </Button>
             </div>
@@ -173,16 +175,28 @@ const Purchase_detail = () => {
 
           <div className="grid gap-4 md:grid-cols-2">
             {
-              (  request?.status === 'approved' || request?.status === 'submitted') && (
+              request?.status === 'submitted' && (
             <ActionCard title="Operation actions" description="Select the next step for this request." tone="blue">
-              <Button type="button" variant="dark" className="h-9 rounded-full px-4">
+              <Button type="button" variant="dark" className="h-10 rounded-lg px-4">
                 Approve
               </Button>
-              <Button type="button"  className="h-9 rounded-full px-4 bg-transparent border-blue-200 hover:bg-blue-100 hover:text-gray-900">
+              <Button type="button"  className="h-10 rounded-lg px-4 bg-transparent border-blue-200 hover:bg-blue-100 hover:text-gray-900">
                 Request revision
               </Button>
-              <Button type="button" variant="destructive" className="rounded-2xl">
+              <Button type="button" variant="destructive" className="h-10 rounded-lg px-4">
                 Decline
+              </Button>
+            </ActionCard>
+          )}
+            {
+              request?.status === 'approved' && (
+            <ActionCard
+              title="Operation actions"
+              description="Select the next step for this request."
+              actionsClassName="rounded-xl bg-sky-50 p-1"
+            >
+              <Button type="button" variant="dark" className="h-10 w-full rounded-lg">
+                Request for Quote
               </Button>
             </ActionCard>
           )}
@@ -193,7 +207,7 @@ const Purchase_detail = () => {
                 type="button"
                 variant="dark"
                 disabled={Boolean(exporting)}
-                className="h-9 rounded-full px-4"
+                className="h-10 rounded-lg px-4"
                 onClick={() => onExport('pdf')}
               >
                 <FileDown className="size-4" />
@@ -202,7 +216,7 @@ const Purchase_detail = () => {
               <Button
                 type="button"
                 disabled={Boolean(exporting)}
-                className="h-9 rounded-full bg-emerald-700 px-4 text-white hover:bg-emerald-800"
+                className="h-10 rounded-lg bg-emerald-700 px-4 text-white hover:bg-emerald-800"
                 onClick={() => onExport('xlsx')}
               >
                 <FileSpreadsheet className="size-4" />
@@ -210,7 +224,7 @@ const Purchase_detail = () => {
               </Button>
               <Button
                 type="button"
-                className="h-9 rounded-full px-4 bg-amber-50 hover:bg-gray-300 hover:text-gray-700"
+                className="h-10 rounded-lg px-4 bg-amber-50 hover:bg-gray-300 hover:text-gray-700"
                 onClick={() => setTrailOpen(true)}
               >
                 <History className="size-4" />
@@ -231,12 +245,12 @@ const Purchase_detail = () => {
            {
             (request?.status === 'draft' || request?.status === 'revision_requested') && (
             <ActionCard title="Manage purchase request" description="Review the details, then choose your next step." tone="amber">
-              <Button type="button" variant="dark" className="h-9 rounded-full px-4">
+              <Button type="button" variant="dark" className="h-10 rounded-lg px-4">
                 Submit request
               </Button>
               <Button
                 type="button"
-                className="bg-amber-100 hover:bg-amber-200  h-9 rounded-full px-4"
+                className="bg-amber-100 hover:bg-amber-200  h-10 rounded-lg px-4"
                 disabled={!canEditPurchase(request?.status)}
                 title={canEditPurchase(request?.status) ? undefined : 'Only drafts and requests with changes requested can be edited'}
                 onClick={() => navigate(`/purchase-requests/${slug}/edit`)}
@@ -246,7 +260,7 @@ const Purchase_detail = () => {
               <Button type="button" onClick={() => setDeleteOpen(true)}
               disabled={!canEditPurchase(request?.status)}
               title={canEditPurchase(request?.status) ? undefined : 'Only drafts and requests with changes requested can be edited'}
-               variant="destructive" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
+               variant="destructive" className="h-10 rounded-lg bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
                 Delete request
               </Button>
             </ActionCard>

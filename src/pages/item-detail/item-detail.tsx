@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Delete, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AuthImage } from '@/components/common/auth-image'
@@ -172,7 +172,7 @@ const Item_detail = () => {
                             setPhotoDeleteOpen(true)
                         }}
                     >
-                        <Delete className="size-3.5" />
+                        <Trash2 className="size-3.5" />
                     </button>
                 </div>
 
@@ -229,7 +229,7 @@ const Item_detail = () => {
                     <div className="mt-3 flex items-center gap-2">
                         <Button
                             variant="dark"
-                            className="h-8 rounded-full px-3.5 text-xs"
+                            className="h-10 rounded-lg px-4 text-sm"
                             disabled={suspended}
                             onClick={() => {
                                 if (suspended) return
@@ -242,7 +242,7 @@ const Item_detail = () => {
                         <button
                             type="button"
                             disabled={suspended}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#fde8e8] px-3.5 text-xs font-medium text-[#e11d48] disabled:opacity-50"
+                            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#fde8e8] px-4 text-sm font-medium text-[#e11d48] disabled:opacity-50"
                             onClick={() => {
                                 if (suspended) return
                                 setDeleteOpen(true)
