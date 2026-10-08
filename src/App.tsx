@@ -12,6 +12,7 @@ import Item_detail from '@/pages/item-detail/item-detail'
 import Purchase_list from '@/pages/purchase/purchase-list'
 import Purchase_add from '@/pages/purchase/purchase-add'
 import Purchase_detail from '@/pages/purchase/purchase-detail'
+import Purchase_edit from '@/pages/purchase/purchase-edit'
 
 const App = () => {
   return (
@@ -29,6 +30,7 @@ const App = () => {
           <Route path='/purchase-requests' element={<Purchase_list/>} />
           <Route path='/purchase-add' element={<Purchase_add/>} />
           <Route path='/purchase-requests/:slug' element={<Purchase_detail/>} />
+          <Route path='/purchase-requests/:slug/edit' element={<Purchase_edit/>} />
         </Route>
       </Route>
     </Routes>

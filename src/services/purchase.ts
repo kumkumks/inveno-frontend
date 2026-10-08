@@ -7,6 +7,11 @@ export async function createPurchaseRequest(payload: CreatePurchasePayload) {
     return data
 }
 
+export async function updatePurchaseRequest(slug: string, payload: CreatePurchasePayload) {
+    const { data } = await api.patch<PurchaseRequestType>(`/api/orgs/purchase-requests/${slug}/`, payload)
+    return data
+}
+
 async function messageFromBlobError(error: unknown) {
   const data = (error as { response?: { data?: unknown } }).response?.data
   if (!(data instanceof Blob)) return null

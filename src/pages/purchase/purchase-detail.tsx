@@ -12,6 +12,7 @@ import { PurchaseTrailDialog } from '@/components/common/purchase-trail-dialog'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { listSpaces } from '@/lib/list'
+import { canEditPurchase } from '@/lib/purchase'
 import { displayRole } from '@/lib/roles'
 import type { PurchaseExportFormat } from '@/lib/types'
 import { exportPurchaseRequest } from '@/services/purchase'
@@ -226,7 +227,13 @@ const Purchase_detail = () => {
               <Button type="button" variant="dark" className="h-9 rounded-full px-4">
                 Submit request
               </Button>
-              <Button type="button"  className="bg-amber-100 hover:bg-amber-200  h-9 rounded-full px-4">
+              <Button
+                type="button"
+                className="bg-amber-100 hover:bg-amber-200  h-9 rounded-full px-4"
+                disabled={!canEditPurchase(request?.status)}
+                title={canEditPurchase(request?.status) ? undefined : 'Only drafts and requests with changes requested can be edited'}
+                onClick={() => navigate(`/purchase-requests/${slug}/edit`)}
+              >
                 Edit details
               </Button>
               <Button type="button" variant="destructive" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
