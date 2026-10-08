@@ -27,8 +27,8 @@ export function PageTitle({
   className?: string
 }) {
   return (
-    <div className={cn('mb-6', action && 'flex items-start justify-between gap-3')}>
-      <div>
+    <div className={cn('mb-6', action && 'flex flex-wrap items-start justify-between gap-3')}>
+      <div className="min-w-0 flex-1">
         <h1 className={cn('text-xl font-normal text-black sm:text-2xl md:text-3xl', className)}>
           {children}
         </h1>

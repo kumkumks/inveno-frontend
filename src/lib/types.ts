@@ -94,3 +94,79 @@ export type MeResponse = {
     registered_on: string;
   } | null;
 };
+
+export type ItemActivityKind = 'incoming' | 'outgoing' | 'item_edit';
+
+export type ItemActivity = {
+  slug: string
+  kind: ItemActivityKind
+  action: string
+  recorded_on: string
+  recorded_by: {
+    slug: string
+    full_name: string
+    user_type: UserType
+  }
+  remarks: string
+}
+
+export type PurchaseStatus =
+  | 'draft'
+  | 'submitted'
+  | 'approved'
+  | 'declined'
+  | 'revision_requested'
+
+  export type PurchaseRequest = {
+    slug: string
+    title: string
+    status: PurchaseStatus
+    space: string | null
+    created_by: string
+    created_at: string
+    created_by_role: UserType
+    notes?: string
+    review_reason?: string
+    lines?: {
+      slug: string
+      description: string
+      quantity: string
+      unit: string
+      item?: string | null
+      awarded_vendor?: string | null
+    }[]
+  }
+
+export type PurchaseLinePayload = {
+  description: string
+  quantity: string
+  unit: string
+  item?: string
+}
+
+export type CreatePurchasePayload = {
+  title: string
+  notes: string
+  space?: string
+  lines: PurchaseLinePayload[]
+}
+
+export type PurchaseExportFormat = 'pdf' | 'xlsx'
+
+export type PurchaseTrailEvent = {
+  slug: string
+  action: string
+  actor_slug: string
+  actor_user_type: UserType
+  created_at: string
+  resource_slug: string
+  resource_type: string
+  prev_hash: string
+  content_hash: string
+  signature: string
+}
+
+export type ProcessEventVerifyResult = {
+  valid: boolean
+  detail?: string
+}

@@ -1,6 +1,6 @@
 import { formatApiError } from '@/lib/errors'
 import { toNamedOptions, unwrapList } from '@/lib/list'
-import type { AddItemPayload, Item, ItemDetail, ItemPhoto, NamedOption, UpdateItemPayload } from '@/lib/types'
+import type { AddItemPayload, Item, ItemActivity, ItemDetail, ItemPhoto, NamedOption, UpdateItemPayload } from '@/lib/types'
 import type { Dispatch, SetStateAction } from 'react'
 import api from './api'
 
@@ -115,3 +115,9 @@ export async function createNamedEntity({
     setSaving(false)
   }
 }
+
+export async function listItemActivity(slug: string) {
+  const { data } = await api.get(`/api/orgs/items/${slug}/activity/`)
+  return unwrapList<ItemActivity>(data)
+}
+

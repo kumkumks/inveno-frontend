@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Delete, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AuthImage } from '@/components/common/auth-image'
@@ -12,42 +12,38 @@ import { PermissionNotice } from '@/components/common/permission-notice'
 import Statscard, { type StatsData } from '@/components/common/statscard'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
-import { displayNamedValue, formatQuantity } from '@/lib/format'
+import { displayNamedValue, formatDate, formatQuantity } from '@/lib/format'
+import { displayRole } from '@/lib/roles'
+import type { ItemActivityKind } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { getItem, uploadItemPhoto } from '@/services/items'
+import { getItem, listItemActivity, uploadItemPhoto } from '@/services/items'
 
-
-const historyRows = [
-    'Incoming',
-    'Outgoing', 
-    'Item edit',
-    'Incoming',
-    'Outgoing',
-    'Item edit',
-    'Incoming',
-    'Item edit',
-    'Outgoing',
-    'Incoming',
-] as const
-
-
-
-function actionStyle(action: (typeof historyRows)[number]) {
-    if (action === 'Outgoing') {
-        return { pill: 'bg-[#fde8e8] text-[#e11d48]', Icon: ArrowUpRight }
+function actionStyle(kind: ItemActivityKind) {
+    if (kind === 'outgoing') {
+        return { label: 'Outgoing', pill: 'bg-[#fde8e8] text-[#e11d48]', Icon: ArrowUpRight }
     }
-    if (action === 'Item edit') {
-        return { pill: 'bg-neutral-900 text-white', Icon: Pencil }
+    if (kind === 'item_edit') {
+        return { label: 'Item edit', pill: 'bg-neutral-900 text-white', Icon: Pencil }
     }
-    return { pill: 'bg-[#e7f6e4] text-[#3d9a4a]', Icon: ArrowDownLeft }
+    return { label: 'Incoming', pill: 'bg-[#e7f6e4] text-[#3d9a4a]', Icon: ArrowDownLeft }
 }
 
 const Item_detail = () => {
     const { slug } = useParams()
     const navigate = useNavigate()
+    const [historyKey, setHistoryKey] = useState(0)
     const { data: item, setData: setItem, error: loadError, loading } = useAsyncResource(
         () => getItem(slug as string),
         [slug],
+        { enabled: Boolean(slug) },
+    )
+    const {
+        data: history,
+        error: historyError,
+        loading: historyLoading,
+    } = useAsyncResource(
+        () => listItemActivity(slug as string),
+        [slug, historyKey],
         { enabled: Boolean(slug) },
     )
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -176,7 +172,7 @@ const Item_detail = () => {
                             setPhotoDeleteOpen(true)
                         }}
                     >
-                        <Delete className="size-3.5" />
+                        <Trash2 className="size-3.5" />
                     </button>
                 </div>
 
@@ -233,7 +229,7 @@ const Item_detail = () => {
                     <div className="mt-3 flex items-center gap-2">
                         <Button
                             variant="dark"
-                            className="h-8 rounded-full px-3.5 text-xs"
+                            className="h-10 rounded-lg px-4 text-sm"
                             disabled={suspended}
                             onClick={() => {
                                 if (suspended) return
@@ -246,7 +242,7 @@ const Item_detail = () => {
                         <button
                             type="button"
                             disabled={suspended}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#fde8e8] px-3.5 text-xs font-medium text-[#e11d48] disabled:opacity-50"
+                            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#fde8e8] px-4 text-sm font-medium text-[#e11d48] disabled:opacity-50"
                             onClick={() => {
                                 if (suspended) return
                                 setDeleteOpen(true)
@@ -264,7 +260,20 @@ const Item_detail = () => {
             {item && (
             <section className="mt-6 flex min-h-80 min-w-0 flex-1 flex-col lg:mt-0 lg:min-h-0 lg:pl-8">
                 <h2 className="text-base font-medium text-neutral-900">Item history</h2>
+                <InlineStatus loading={historyLoading} loadingLabel="Loading history…" className="mt-4" />
+                {historyError && isPermissionError(historyError) && (
+                    <div className="mt-4">
+                        <PermissionNotice action="cannot view this item's history" />
+                    </div>
+                )}
+                {historyError && !isPermissionError(historyError) && (
+                    <InlineStatus error={historyError} className="mt-4" />
+                )}
+                {!historyLoading && !historyError && !history?.length && (
+                    <p className="mt-4 text-sm text-gray-400">No history yet.</p>
+                )}
                 <div className="mt-4 h-[min(28rem,55vh)] overflow-auto  lg:h-auto lg:min-h-0 lg:flex-1">
+                {Boolean(history?.length) && (
                 <table className="w-full min-w-160 text-left">
                     <thead>
                         <tr className="text-sm text-gray-400">
@@ -275,30 +284,31 @@ const Item_detail = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {historyRows.map((action, index) => {
-                            const { pill, Icon } = actionStyle(action)
+                        {history?.map((row) => {
+                            const { label, pill, Icon } = actionStyle(row.kind)
                             return (
-                                <tr key={`${action}-${index}`}>
+                                <tr key={row.slug}>
                                     <td className="py-2.5 pr-4">
                                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${pill}`}>
                                             <Icon className="size-3.5" />
-                                            {action}
+                                            {label}
                                         </span>
                                     </td>
                                     <td className="py-2.5 pr-4">
-                                        <div className="text-sm text-neutral-800">20-12-2025</div>
-                                        <div className="text-xs text-gray-400">04:23pm</div>
+                                        <div className="text-sm text-neutral-800">{formatDate(row.recorded_on)}</div>
+                                        <div className="text-xs text-gray-400">{formatDate(row.recorded_on, 'time')}</div>
                                     </td>
                                     <td className="py-2.5 pr-4">
-                                        <div className="text-sm text-neutral-800">Jefin James</div>
-                                        <div className="text-xs text-gray-400">Supervisor</div>
+                                        <div className="text-sm text-neutral-800">{row.recorded_by.full_name}</div>
+                                        <div className="text-xs text-gray-400">{displayRole(row.recorded_by.user_type)}</div>
                                     </td>
-                                    <td className="py-2.5 text-sm text-neutral-700">Table cell</td>
+                                    <td className="py-2.5 text-sm text-neutral-700">{row.remarks || '—'}</td>
                                 </tr>
                             )
                         })}
                     </tbody>
                 </table>
+                )}
                 </div>
             </section>
             )}
@@ -310,6 +320,7 @@ const Item_detail = () => {
                         item={item}
                         onSaved={(saved) => {
                             setItem(saved)
+                            setHistoryKey((current) => current + 1)
                             if (saved.slug && saved.slug !== slug) {
                                 navigate(`/item-detail/${saved.slug}`, { replace: true })
                             }
