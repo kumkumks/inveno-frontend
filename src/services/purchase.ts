@@ -12,6 +12,10 @@ export async function updatePurchaseRequest(slug: string, payload: CreatePurchas
     return data
 }
 
+export async function deletePurchaseRequest(slug: string) {
+    await api.delete(`/api/orgs/purchase-requests/${slug}/`)
+}
+
 async function messageFromBlobError(error: unknown) {
   const data = (error as { response?: { data?: unknown } }).response?.data
   if (!(data instanceof Blob)) return null

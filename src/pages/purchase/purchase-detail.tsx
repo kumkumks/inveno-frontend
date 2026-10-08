@@ -13,9 +13,10 @@ import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { listSpaces } from '@/lib/list'
 import { canEditPurchase } from '@/lib/purchase'
+import { ConfirmDeleteDialog } from '@/components/common/confirm-delete-dialog'
 import { displayRole } from '@/lib/roles'
 import type { PurchaseExportFormat } from '@/lib/types'
-import { exportPurchaseRequest } from '@/services/purchase'
+import { deletePurchaseRequest, exportPurchaseRequest } from '@/services/purchase'
 import { getPurchaseRequest } from '@/services/purchases'
 
 function ActionCard({
@@ -71,7 +72,7 @@ const Purchase_detail = () => {
   const [exporting, setExporting] = useState<PurchaseExportFormat | null>(null)
   const [exportError, setExportError] = useState('')
   const [trailOpen, setTrailOpen] = useState(false)
-
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const onExport = async (format: PurchaseExportFormat) => {
     if (!slug || exporting) return
     setExporting(format)
@@ -236,7 +237,7 @@ const Purchase_detail = () => {
               >
                 Edit details
               </Button>
-              <Button type="button" variant="destructive" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
+              <Button type="button" onClick={() => setDeleteOpen(true)} variant="destructive" className="h-9 rounded-full bg-[#fde8e8] px-4 text-[#e11d48] hover:bg-[#f8d0d0]">
                 Delete request
               </Button>
             </ActionCard>
@@ -249,6 +250,15 @@ const Purchase_detail = () => {
         onOpenChange={setTrailOpen}
         slug={slug}
         spaceName={spaceName || request?.space || undefined}
+      />
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete purchase request"
+        description={`Delete ${request?.title || 'this purchase request'}? This cannot be undone from this screen.`}
+        permissionAction="cannot delete this purchase request"
+        onConfirm={() => deletePurchaseRequest(slug as string)}
+        onDeleted={() => navigate('/purchase-requests')}
       />
     </PageShell>
   )
