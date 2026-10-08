@@ -95,7 +95,7 @@ const Purchase_detail = () => {
           <Button
           variant="gray"
           className="h-8 w-fit rounded-lg bg-gray-100 px-3 text-sm font-normal text-gray-800 hover:bg-gray-200"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/purchase-requests')}
         >
           <ArrowLeft className="size-4" />
           Go back
