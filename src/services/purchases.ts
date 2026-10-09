@@ -29,3 +29,8 @@ export async function submitPurchaseRequest(slug: string) {
   const { data } = await api.post<PurchaseRequest>(`/api/orgs/purchase-requests/${slug}/submit/`)
   return data
 }
+
+export async function approvePurchaseRequest(slug: string) {
+  const { data } = await api.post<PurchaseRequest>(`/api/orgs/purchase-requests/${slug}/approve/`)
+  return data
+}

@@ -17,7 +17,7 @@ import { ConfirmDeleteDialog } from '@/components/common/confirm-delete-dialog'
 import { displayRole } from '@/lib/roles'
 import type { PurchaseExportFormat } from '@/lib/types'
 import { deletePurchaseRequest, exportPurchaseRequest } from '@/services/purchase'
-import { getPurchaseRequest, submitPurchaseRequest } from '@/services/purchases'
+import { approvePurchaseRequest, getPurchaseRequest, submitPurchaseRequest } from '@/services/purchases'
 
 function ActionCard({
   title,
@@ -79,6 +79,8 @@ const Purchase_detail = () => {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [approving, setApproving] = useState(false)
+  const [approveError, setApproveError] = useState('')
   const onExport = async (format: PurchaseExportFormat) => {
     if (!slug || exporting) return
     setExporting(format)
@@ -102,6 +104,19 @@ const Purchase_detail = () => {
       setSubmitError(formatApiError(err))
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const onApprove = async () => {
+    if (!slug || request?.status !== 'submitted' || approving) return
+    setApproving(true)
+    setApproveError('')
+    try {
+      setData(await approvePurchaseRequest(slug))
+    } catch (err) {
+      setApproveError(formatApiError(err))
+    } finally {
+      setApproving(false)
     }
   }
 
@@ -195,9 +210,20 @@ const Purchase_detail = () => {
             {
               request?.status === 'submitted' && (
             <ActionCard title="Operation actions" description="Select the next step for this request." tone="blue">
-              <Button type="button" variant="dark" className="h-10 rounded-lg px-4">
-                Approve
+              <Button
+                type="button"
+                variant="dark"
+                className="h-10 rounded-lg px-4"
+                disabled={approving}
+                onClick={() => void onApprove()}
+              >
+                {approving ? 'Approving…' : 'Approve'}
               </Button>
+              {approveError && isPermissionError(approveError) ? (
+                <PermissionNotice action="cannot approve this purchase request" />
+              ) : (
+                <InlineStatus error={approveError} className="w-full" />
+              )}
               <Button type="button"  className="h-10 rounded-lg px-4 bg-transparent border-blue-200 hover:bg-blue-100 hover:text-gray-900">
                 Request revision
               </Button>
