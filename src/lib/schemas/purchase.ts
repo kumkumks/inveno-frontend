@@ -40,3 +40,36 @@ export const trailVerifySchema = z.object({
 
 export type TrailVerifyForm = z.infer<typeof trailVerifySchema>
 
+export const recordQuoteSchema = z.object({
+  vendor: z.string().min(1, 'Choose a vendor.'),
+  notes: z.string(),
+  lines: z
+    .array(
+      z.object({
+        line: z.string(),
+        description: z.string(),
+        unit: z.string(),
+        unit_price: z
+          .string()
+          .trim()
+          .min(1, 'Enter a unit price.')
+          .refine((value) => !Number.isNaN(Number(value)) && Number(value) > 0, 'Enter a number for unit price.'),
+      }),
+    )
+    .min(1, 'Enter prices for each line.'),
+})
+
+export type RecordQuoteForm = z.infer<typeof recordQuoteSchema>
+
+export const rejectRfqVendorSchema = z.object({
+  reason: z.string().trim().min(1, 'Enter a reason.'),
+})
+
+export type RejectRfqVendorForm = z.infer<typeof rejectRfqVendorSchema>
+
+export const addRfqVendorSchema = z.object({
+  vendor: z.string().min(1, 'Choose a vendor.'),
+})
+
+export type AddRfqVendorForm = z.infer<typeof addRfqVendorSchema>
+

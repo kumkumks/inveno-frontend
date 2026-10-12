@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -98,6 +99,7 @@ export function StartRfqDialog({
       await createQuoteRequest(purchaseSlug, data.vendor_slugs)
       reset(emptyRfq)
       onOpenChange(false)
+      navigate(`/purchase-requests/${purchaseSlug}/quotes`)
     } catch (err) {
       setError('root', { type: 'server', message: formatApiError(err) })
     }

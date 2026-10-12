@@ -192,3 +192,44 @@ export type VendorCreatePayload = {
   website?: string
   gst?: string
 }
+
+export type QuoteRequestStatus = 'preparing' | 'in_review' | 'awarding' | 'cancelled'
+
+export type QuoteVendorStatus = 'invited' | 'quoted' | 'rejected' | 'awarded'
+
+export type QuotePrice = {
+  vendor: string
+  unit_price: string | number
+}
+
+export type QuoteLine = {
+  slug: string
+  description: string
+  quantity: string
+  unit: string
+  awarded_vendor?: string | null
+  quotes: QuotePrice[]
+}
+
+export type QuoteRequestVendor = {
+  vendor: string
+  status: QuoteVendorStatus
+  reject_reason?: string
+}
+
+export type QuoteRequest = {
+  slug: string
+  purchase_request: string
+  status: QuoteRequestStatus
+  notes?: string
+  vendors: QuoteRequestVendor[]
+  lines: QuoteLine[]
+  created_at?: string
+  updated_at?: string
+}
+
+export type RecordQuotePayload = {
+  vendor: string
+  notes?: string
+  lines: { line: string; unit_price: string }[]
+}
