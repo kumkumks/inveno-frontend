@@ -170,3 +170,22 @@ export type ProcessEventVerifyResult = {
   valid: boolean
   detail?: string
 }
+
+export type Vendor = {
+  slug: string
+  name: string
+  contact_name?: string
+  phone?: string
+  email?: string
+  address?: string
+  gst?: string
+  website?: string
+  is_active?: boolean
+}
+
+export type VendorCreatePayload = {
+  name: string
+  contact_name: string
+  phone: string
+  address: string
+}

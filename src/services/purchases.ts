@@ -34,3 +34,11 @@ export async function approvePurchaseRequest(slug: string) {
   const { data } = await api.post<PurchaseRequest>(`/api/orgs/purchase-requests/${slug}/approve/`)
   return data
 }
+
+export async function createQuoteRequest(purchaseRequest: string, vendorSlugs: string[]) {
+  const { data } = await api.post('/api/orgs/rfqs/', {
+    purchase_request: purchaseRequest,
+    vendor_slugs: vendorSlugs,
+  })
+  return data
+}

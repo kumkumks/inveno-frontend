@@ -20,6 +20,10 @@ export function ConfirmDeleteDialog({
   permissionAction,
   onConfirm,
   onDeleted,
+  confirmLabel = 'Delete',
+  pendingLabel = 'Deleting…',
+  overlayClassName,
+  contentClassName,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -28,6 +32,10 @@ export function ConfirmDeleteDialog({
   permissionAction: string
   onConfirm: () => Promise<unknown>
   onDeleted: () => void
+  confirmLabel?: string
+  pendingLabel?: string
+  overlayClassName?: string
+  contentClassName?: string
 }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -56,7 +64,7 @@ export function ConfirmDeleteDialog({
         }
       }}
     >
-      <DialogContent>
+      <DialogContent overlayClassName={overlayClassName} className={contentClassName}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -64,11 +72,11 @@ export function ConfirmDeleteDialog({
         {error && isPermissionError(error) && <PermissionNotice action={permissionAction} />}
         {error && !isPermissionError(error) && <InlineStatus error={error} />}
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button type="button" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button type="button" variant="destructive" onClick={() => void confirmDelete()} disabled={saving}>
-            {saving ? 'Deleting…' : 'Delete'}
+          <Button type="button" onClick={() => void confirmDelete()} disabled={saving}>
+            {saving ? pendingLabel : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

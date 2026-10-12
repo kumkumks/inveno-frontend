@@ -9,6 +9,7 @@ import { StatusPill, purchaseStatusStyle, statusLabel, tableHeadClass } from '@/
 import { PageShell, PageTitle } from '@/components/common/page-shell'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { PurchaseTrailDialog } from '@/components/common/purchase-trail-dialog'
+import { StartRfqDialog } from '@/components/common/start-rfq-dialog'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { listSpaces } from '@/lib/list'
@@ -81,6 +82,7 @@ const Purchase_detail = () => {
   const [submitError, setSubmitError] = useState('')
   const [approving, setApproving] = useState(false)
   const [approveError, setApproveError] = useState('')
+  const [rfqOpen, setRfqOpen] = useState(false)
   const onExport = async (format: PurchaseExportFormat) => {
     if (!slug || exporting) return
     setExporting(format)
@@ -239,7 +241,7 @@ const Purchase_detail = () => {
               description="Select the next step for this request."
               actionsClassName="rounded-xl bg-sky-50 p-1"
             >
-              <Button type="button" variant="dark" className="h-10 w-full rounded-lg">
+              <Button type="button" variant="dark" className="h-10 w-full rounded-lg" onClick={() => setRfqOpen(true)}>
                 Request for Quote
               </Button>
             </ActionCard>
@@ -326,6 +328,12 @@ const Purchase_detail = () => {
         </div>
       )}
 
+      <StartRfqDialog
+        open={rfqOpen}
+        onOpenChange={setRfqOpen}
+        purchaseSlug={slug ?? ''}
+        title={request?.title || 'Purchase request'}
+      />
       <PurchaseTrailDialog
         open={trailOpen}
         onOpenChange={setTrailOpen}
