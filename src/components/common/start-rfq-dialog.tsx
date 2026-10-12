@@ -33,6 +33,7 @@ export function StartRfqDialog({
   purchaseSlug: string
   title: string
 }) {
+  const navigate = useNavigate()
   const { data: vendors = [], setData, error: loadError, loading } = useAsyncResource(listVendors, [open], {
     enabled: open,
   })
