@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { CircleAlert, CircleCheck, X } from 'lucide-react'
 import { FormField } from '@/components/common/form-field'
 import { InlineStatus } from '@/components/common/inline-status'
@@ -10,6 +12,7 @@ import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/she
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
+import { trailVerifySchema, type TrailVerifyForm } from '@/lib/schemas/purchase'
 import type { PurchaseTrailEvent } from '@/lib/types'
 import { listPurchaseTrail, verifyProcessEvent } from '@/services/purchases'
 
@@ -58,45 +61,46 @@ export function PurchaseTrailDialog({
   const trail = [...events].reverse()
   const permissionDenied = Boolean(error && isPermissionError(error))
   const [selectedSlug, setSelectedSlug] = useState('')
-  const [hash, setHash] = useState('')
-  const [signature, setSignature] = useState('')
-  const [verifying, setVerifying] = useState(false)
-  const [verifyError, setVerifyError] = useState('')
   const [verifyOk, setVerifyOk] = useState('')
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<TrailVerifyForm>({
+    resolver: zodResolver(trailVerifySchema),
+    defaultValues: { hash: '', signature: '' },
+    mode: 'onChange',
+  })
+  const verifyError = errors.root?.message ?? ''
   const selected = trail.find((event) => event.slug === selectedSlug) ?? trail[0]
 
   useEffect(() => {
     if (open) return
     setSelectedSlug('')
-    setHash('')
-    setSignature('')
-    setVerifyError('')
     setVerifyOk('')
-  }, [open])
+    reset({ hash: '', signature: '' })
+    clearErrors()
+  }, [open, reset, clearErrors])
 
   const close = (next: boolean) => {
     onOpenChange(next)
   }
 
-  const onVerify = async () => {
-    setVerifyError('')
+  const onVerify = async (data: TrailVerifyForm) => {
+    clearErrors('root')
     setVerifyOk('')
-    if (!hash.trim() || !signature.trim()) {
-      setVerifyError('Enter a hash and signature.')
-      return
-    }
-    setVerifying(true)
     try {
-      const result = await verifyProcessEvent(hash.trim(), signature.trim())
+      const result = await verifyProcessEvent(data.hash, data.signature)
       if (result.valid === true) {
         setVerifyOk('Signature is valid.')
       } else {
-        setVerifyError(result.detail || 'Signature does not match')
+        setError('root', { type: 'server', message: result.detail || 'Signature does not match' })
       }
     } catch (err) {
-      setVerifyError(formatApiError(err) || 'Signature does not match')
-    } finally {
-      setVerifying(false)
+      setError('root', { type: 'server', message: formatApiError(err) || 'Signature does not match' })
     }
   }
 
@@ -172,7 +176,10 @@ export function PurchaseTrailDialog({
         )}
         </div>
 
-        <section className="flex shrink-0 flex-col gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:px-5">
+        <form
+          className="flex shrink-0 flex-col gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:px-5"
+          onSubmit={handleSubmit(onVerify)}
+        >
           <h3 className="text-sm font-semibold text-neutral-900">Verify one event</h3>
           {verifyError ? (
             <div className="flex items-center gap-2 rounded-lg border border-[#f5b5b5] bg-[#fde8e8] px-3 py-2 text-sm text-[#e11d48]">
@@ -186,32 +193,34 @@ export function PurchaseTrailDialog({
               {verifyOk}
             </div>
           ) : null}
-          <FormField label="Hash" htmlFor="trail-hash" labelClassName="text-sm font-normal text-gray-800">
+          <FormField
+            label="Hash"
+            htmlFor="trail-hash"
+            error={errors.hash?.message}
+            labelClassName="text-sm font-normal text-gray-800"
+          >
             <Input
               id="trail-hash"
-              value={hash}
-              onChange={(event) => setHash(event.target.value)}
               className="h-9 rounded-md border-gray-300 text-black"
+              {...register('hash')}
             />
           </FormField>
-          <FormField label="Signature" htmlFor="trail-signature" labelClassName="text-sm font-normal text-gray-800">
+          <FormField
+            label="Signature"
+            htmlFor="trail-signature"
+            error={errors.signature?.message}
+            labelClassName="text-sm font-normal text-gray-800"
+          >
             <Input
               id="trail-signature"
-              value={signature}
-              onChange={(event) => setSignature(event.target.value)}
               className="h-9 rounded-md border-gray-300 text-black"
+              {...register('signature')}
             />
           </FormField>
-          <Button
-            type="button"
-            variant="dark"
-            disabled={verifying}
-            className="h-8 w-fit rounded-md px-3"
-            onClick={onVerify}
-          >
-            {verifying ? 'Verifying…' : 'Verify'}
+          <Button type="submit" variant="dark" disabled={isSubmitting} className="h-8 w-fit rounded-md px-3">
+            {isSubmitting ? 'Verifying…' : 'Verify'}
           </Button>
-        </section>
+        </form>
       </SheetContent>
     </Sheet>
   )

@@ -188,4 +188,7 @@ export type VendorCreatePayload = {
   contact_name: string
   phone: string
   address: string
+  email?: string
+  website?: string
+  gst?: string
 }

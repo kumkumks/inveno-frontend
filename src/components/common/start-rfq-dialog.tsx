@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,9 +15,12 @@ import { InlineStatus } from '@/components/common/inline-status'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
+import { rfqFormSchema, type RfqForm } from '@/lib/schemas/purchase'
 import type { Vendor } from '@/lib/types'
 import { createQuoteRequest } from '@/services/purchases'
 import { listVendors } from '@/services/vendors'
+
+const emptyRfq: RfqForm = { vendor_slugs: [] }
 
 export function StartRfqDialog({
   open,
@@ -31,18 +36,37 @@ export function StartRfqDialog({
   const { data: vendors = [], setData, error: loadError, loading } = useAsyncResource(listVendors, [open], {
     enabled: open,
   })
-  const [selected, setSelected] = useState<string[]>([])
   const [manageOpen, setManageOpen] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [error, setError] = useState('')
+  const {
+    handleSubmit,
+    setValue,
+    getValues,
+    watch,
+    reset,
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<RfqForm>({
+    resolver: zodResolver(rfqFormSchema),
+    defaultValues: emptyRfq,
+    mode: 'onChange',
+  })
+  const selected = watch('vendor_slugs')
+  const error = errors.root?.message ?? errors.vendor_slugs?.message ?? ''
 
   const close = (next: boolean) => {
-    if (creating || manageOpen) return
+    if (isSubmitting || manageOpen) return
     if (!next) {
-      setSelected([])
-      setError('')
+      reset(emptyRfq)
+      clearErrors()
     }
     onOpenChange(next)
+  }
+
+  const setSelected = (next: string[] | ((current: string[]) => string[])) => {
+    const current = getValues('vendor_slugs')
+    const vendor_slugs = typeof next === 'function' ? next(current) : next
+    setValue('vendor_slugs', vendor_slugs, { shouldValidate: true, shouldDirty: true })
   }
 
   const refreshVendors = async () => {
@@ -66,18 +90,15 @@ export function StartRfqDialog({
     )
   }
 
-  const onCreate = async () => {
-    if (!purchaseSlug || selected.length === 0 || creating) return
-    setCreating(true)
-    setError('')
+  const onCreate = async (data: RfqForm) => {
+    if (!purchaseSlug) return
+    clearErrors('root')
     try {
-      await createQuoteRequest(purchaseSlug, selected)
-      setSelected([])
+      await createQuoteRequest(purchaseSlug, data.vendor_slugs)
+      reset(emptyRfq)
       onOpenChange(false)
     } catch (err) {
-      setError(formatApiError(err))
-    } finally {
-      setCreating(false)
+      setError('root', { type: 'server', message: formatApiError(err) })
     }
   }
 
@@ -85,6 +106,7 @@ export function StartRfqDialog({
     <>
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-md gap-4">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onCreate)}>
         <DialogHeader>
           <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">Start RFQ</p>
           <DialogTitle className="text-lg font-semibold text-neutral-900">{title}</DialogTitle>
@@ -133,13 +155,14 @@ export function StartRfqDialog({
         {error && !isPermissionError(error) && <InlineStatus error={error} />}
 
         <DialogFooter>
-          <Button type="button" onClick={() => close(false)} disabled={creating}>
+          <Button type="button" variant="outline" onClick={() => close(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="button" disabled={creating || selected.length === 0} onClick={() => void onCreate()}>
-            {creating ? 'Creating…' : 'Create RFQ'}
+          <Button type="submit" disabled={isSubmitting || selected.length === 0}>
+            {isSubmitting ? 'Creating…' : 'Create RFQ'}
           </Button>
         </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
     <ManageVendorsDialog

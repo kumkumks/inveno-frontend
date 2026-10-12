@@ -131,7 +131,7 @@ export function ManageVendorsDialog({
                 Add vendor
               </Button>
               <DialogClose
-                render={<Button type="button" size="icon-sm" />}
+                render={<Button type="button" variant="ghost" size="icon-sm" />}
               >
                 <XIcon />
                 <span className="sr-only">Close</span>
@@ -180,7 +180,7 @@ export function ManageVendorsDialog({
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button type="button" onClick={() => { setAddOpen(false); setEditing(selected) }}>
+                      <Button type="button" variant="outline" onClick={() => { setAddOpen(false); setEditing(selected) }}>
                         Edit
                       </Button>
                       {selected.is_active === false ? (
@@ -188,7 +188,7 @@ export function ManageVendorsDialog({
                           {pendingSlug === selected.slug ? 'Restoring…' : 'Unsuspend'}
                         </Button>
                       ) : (
-                        <Button type="button" onClick={() => setSuspending(selected)}>
+                        <Button type="button" variant="destructive" onClick={() => setSuspending(selected)}>
                           Suspend
                         </Button>
                       )}

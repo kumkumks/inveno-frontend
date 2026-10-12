@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -37,20 +38,29 @@ export function ConfirmDeleteDialog({
   overlayClassName?: string
   contentClassName?: string
 }) {
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const {
+    handleSubmit,
+    setError,
+    clearErrors,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm()
+  const error = errors.root?.message ?? ''
+
+  useEffect(() => {
+    if (!open) return
+    reset()
+    clearErrors()
+  }, [open, reset, clearErrors])
 
   const confirmDelete = async () => {
-    setSaving(true)
-    setError('')
+    clearErrors('root')
     try {
       await onConfirm()
       onOpenChange(false)
       onDeleted()
     } catch (deleteFailure) {
-      setError(formatApiError(deleteFailure))
-    } finally {
-      setSaving(false)
+      setError('root', { type: 'server', message: formatApiError(deleteFailure) })
     }
   }
 
@@ -58,27 +68,29 @@ export function ConfirmDeleteDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!saving) {
-          setError('')
+        if (!isSubmitting) {
+          clearErrors()
           onOpenChange(next)
         }
       }}
     >
       <DialogContent overlayClassName={overlayClassName} className={contentClassName}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        {error && isPermissionError(error) && <PermissionNotice action={permissionAction} />}
-        {error && !isPermissionError(error) && <InlineStatus error={error} />}
-        <DialogFooter>
-          <Button type="button" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={() => void confirmDelete()} disabled={saving}>
-            {saving ? pendingLabel : confirmLabel}
-          </Button>
-        </DialogFooter>
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit(confirmDelete)}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          {error && isPermissionError(error) && <PermissionNotice action={permissionAction} />}
+          {error && !isPermissionError(error) && <InlineStatus error={error} />}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? pendingLabel : confirmLabel}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

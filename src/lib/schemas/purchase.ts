@@ -27,3 +27,16 @@ export const purchaseAddSchema = z.object({
 
 export type PurchaseAddForm = z.infer<typeof purchaseAddSchema>
 
+export const rfqFormSchema = z.object({
+  vendor_slugs: z.array(z.string()).min(1, 'Choose at least one vendor.'),
+})
+
+export type RfqForm = z.infer<typeof rfqFormSchema>
+
+export const trailVerifySchema = z.object({
+  hash: z.string().trim().min(1, 'Enter a hash.'),
+  signature: z.string().trim().min(1, 'Enter a signature.'),
+})
+
+export type TrailVerifyForm = z.infer<typeof trailVerifySchema>
+
