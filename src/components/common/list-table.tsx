@@ -60,6 +60,13 @@ export const purchaseStatusStyle = {
   draft: 'bg-gray-100 text-gray-500',
 } as const
 
+export const quoteStatusStyle: Record<string, string> = {
+  preparing: 'bg-[#fde8d0] text-[#c47a3a]',
+  in_review: 'bg-[#fde8d0] text-[#c47a3a]',
+  awarding: 'bg-[#e7f6e4] text-[#3d9a4a]',
+  cancelled: 'bg-[#fde8e8] text-[#e11d48]',
+}
+
 export function statusLabel(status: string) {
   const text = status.replaceAll('_', ' ')
   return text.charAt(0).toUpperCase() + text.slice(1)
