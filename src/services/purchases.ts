@@ -3,6 +3,7 @@ import { unwrapList } from '@/lib/list'
 import { downloadBlob, filenameFromDisposition } from '@/lib/download'
 import type {
   ProcessEventVerifyResult,
+  PurchaseOrder,
   PurchaseRequest,
   PurchaseTrailEvent,
   QuoteRequest,
@@ -86,6 +87,29 @@ export async function rejectQuoteRequestVendor(rfqSlug: string, vendorSlug: stri
 export async function recordVendorQuote(rfqSlug: string, payload: RecordQuotePayload) {
   const { data } = await api.post<QuoteRequest>(`/api/orgs/rfqs/${rfqSlug}/quotes/`, payload)
   return data
+}
+
+export async function selectQuoteRequestLines(
+  rfqSlug: string,
+  selections: { line: string; vendor: string }[],
+) {
+  const { data } = await api.post<QuoteRequest>(`/api/orgs/rfqs/${rfqSlug}/select-lines/`, {
+    selections,
+  })
+  return data
+}
+
+export async function createQuoteRequestPurchaseOrder(rfqSlug: string, vendor: string) {
+  const { data } = await api.post<PurchaseOrder>(`/api/orgs/rfqs/${rfqSlug}/purchase-orders/`, {
+    vendor,
+    create_purchase_order: true,
+  })
+  return data
+}
+
+export async function listPurchaseOrders() {
+  const { data } = await api.get('/api/orgs/purchase-orders/')
+  return unwrapList<PurchaseOrder>(data)
 }
 
 export async function exportQuoteRequest(slug: string, format: 'pdf' | 'xlsx' = 'pdf', title?: string) {

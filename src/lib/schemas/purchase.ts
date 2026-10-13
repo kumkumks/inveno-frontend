@@ -73,3 +73,19 @@ export const addRfqVendorSchema = z.object({
 
 export type AddRfqVendorForm = z.infer<typeof addRfqVendorSchema>
 
+export const awardLinesSchema = z.object({
+  selections: z
+    .array(
+      z.object({
+        line: z.string(),
+        description: z.string(),
+        unit: z.string(),
+        quantity: z.string(),
+        vendor: z.string().min(1, 'Choose a vendor.'),
+      }),
+    )
+    .min(1, 'Choose a vendor for each remaining line.'),
+})
+
+export type AwardLinesForm = z.infer<typeof awardLinesSchema>
+

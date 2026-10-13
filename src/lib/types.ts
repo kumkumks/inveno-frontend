@@ -202,13 +202,39 @@ export type QuotePrice = {
   unit_price: string | number
 }
 
+export type QuoteLineAward = {
+  vendor: string
+  quantity?: string | number
+}
+
 export type QuoteLine = {
   slug: string
   description: string
   quantity: string
   unit: string
   awarded_vendor?: string | null
+  quantity_remaining?: string | number
   quotes: QuotePrice[]
+  awards?: QuoteLineAward[]
+}
+
+export type PurchaseOrderLine = {
+  slug: string
+  description: string
+  quantity: string
+  unit: string
+  unit_price: string | number
+}
+
+export type PurchaseOrder = {
+  slug: string
+  vendor: string
+  purchase_request: string
+  status: string
+  is_new_order?: boolean
+  lines?: PurchaseOrderLine[]
+  created_at?: string
+  updated_at?: string
 }
 
 export type QuoteRequestVendor = {

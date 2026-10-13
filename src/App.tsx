@@ -14,6 +14,7 @@ import Purchase_add from '@/pages/purchase/purchase-add'
 import Purchase_detail from '@/pages/purchase/purchase-detail'
 import Purchase_edit from '@/pages/purchase/purchase-edit'
 import RequestQuotes from '@/pages/request-quotes/request-qoutes'
+import RequestQuotesAward from '@/pages/request-quotes/request-quotes-award'
 import RequestQuotesList from '@/pages/request-quotes/request-quotes-list'
 
 const App = () => {
@@ -34,6 +35,7 @@ const App = () => {
           <Route path='/purchase-requests/:slug' element={<Purchase_detail/>} />
           <Route path='/purchase-requests/:slug/edit' element={<Purchase_edit/>} />
           <Route path='/purchase-requests/:slug/quotes' element={<RequestQuotes/>} />
+          <Route path='/purchase-requests/:slug/quotes/award' element={<RequestQuotesAward/>} />
           <Route path='/request-quotes' element={<RequestQuotesList/>} />
         </Route>
       </Route>

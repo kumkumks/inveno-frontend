@@ -111,7 +111,8 @@ const RequestQuotes = () => {
   )
   const canAct = Boolean(rfq) && rfq?.status !== 'cancelled' && rfq?.status !== 'awarding'
   const canRecord = canAct && vendors.some((item) => item.status !== 'rejected')
-  const canContinue = rfq?.status === 'in_review'
+  const canContinue = rfq?.status === 'in_review' || rfq?.status === 'awarding'
+  const awardPath = `/purchase-requests/${slug}/quotes/award`
 
   const onRfqSaved = (next: QuoteRequest) => {
     setRfq(next)
@@ -281,7 +282,13 @@ const RequestQuotes = () => {
           </section>
 
           <div className="flex justify-stretch sm:justify-end">
-            <Button type="button" variant="dark" className="h-9 w-full px-4 sm:w-auto" disabled={!canContinue}>
+            <Button
+              type="button"
+              variant="dark"
+              className="h-9 w-full px-4 sm:w-auto"
+              disabled={!canContinue}
+              onClick={() => navigate(awardPath)}
+            >
               Continue to award
             </Button>
           </div>
