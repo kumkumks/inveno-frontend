@@ -138,10 +138,9 @@ const RequestQuotesAward = () => {
 
   const leftOnLine = (line: QuoteLine) => Math.max(0, qty(line.quantity) - totalSaved(line) - pendingOnLine(line))
 
-  const setPendingQty = (line: QuoteLine, vendor: string, value: string, clamp = false) => {
+  const setPendingQty = (line: QuoteLine, vendor: string, value: string) => {
     const key = pendingKey(line.slug, vendor)
     setPending((current) => {
-      const available = availableFor(line, vendor, current)
       const next = { ...current }
       const trimmed = value.trim()
       if (trimmed === '') {
@@ -155,13 +154,14 @@ const RequestQuotesAward = () => {
       if (!/^\d*\.?\d{0,3}$/.test(trimmed)) return current
       const numeric = Number(trimmed)
       if (Number.isNaN(numeric) || numeric < 0) return current
-      if (clamp && numeric > available) {
-        next[key] = available > 0 ? String(available) : ''
-        return next
-      }
       next[key] = numeric === 0 ? trimmed : trimmed.replace(/^0+(?=\d)/, '')
       return next
     })
+  }
+
+  const qtyOverLimit = (line: QuoteLine, vendor: string) => {
+    const amount = pendingQty(line.slug, vendor)
+    return amount > 0 && amount > availableFor(line, vendor)
   }
 
   const fillRemaining = (line: QuoteLine, vendor: string) => {
@@ -179,6 +179,7 @@ const RequestQuotesAward = () => {
 
   const pendingEntries = Object.entries(pending).filter(([, value]) => qty(value) > 0)
   const hasPending = pendingEntries.length > 0
+  const hasQtyError = lines.some((line) => columns.some((column) => qtyOverLimit(line, column.vendor)))
   const canAct = Boolean(rfq) && canAward && !saving && !creating && !resetOpen && !saveOpen
 
   const savedTotal = lines.reduce((sum, line) => {
@@ -415,6 +416,7 @@ const RequestQuotesAward = () => {
                           const vendorCap = availableFor(line, column.vendor)
                           const unitPrice = qty(quote?.unit_price)
                           const leftoverAfter = Math.max(0, vendorCap - waitingQty)
+                          const overLimit = qtyOverLimit(line, column.vendor)
                           if (!quote) {
                             return <div key={column.vendor} className="px-3 py-5" />
                           }
@@ -456,24 +458,36 @@ const RequestQuotesAward = () => {
                                   ) : null}
                                 </div>
                               )}
-                              <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                                <input
-                                  type="text"
-                                  inputMode="decimal"
-                                  autoComplete="off"
-                                  placeholder="0"
-                                  className="h-8 w-16 rounded-md border border-gray-300 bg-transparent px-2 text-center text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-                                  value={pendingInput(line, column.vendor)}
-                                  disabled={!canAct}
-                                  onFocus={(event) => {
-                                    const input = event.currentTarget
-                                    requestAnimationFrame(() => input.select())
-                                  }}
-                                  onClick={(event) => event.currentTarget.select()}
-                                  onChange={(event) => setPendingQty(line, column.vendor, event.target.value)}
-                                  onBlur={(event) => setPendingQty(line, column.vendor, event.target.value, true)}
-                                />
-                                <span>of {formatQuantity(left)} left</span>
+                              <div className="mt-2 flex flex-col gap-1">
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    autoComplete="off"
+                                    placeholder="0"
+                                    aria-invalid={overLimit || undefined}
+                                    className={cn(
+                                      'h-8 w-16 rounded-md border bg-transparent px-2 text-center text-sm outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
+                                      overLimit
+                                        ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20'
+                                        : 'border-gray-300 focus-visible:border-ring focus-visible:ring-ring/50',
+                                    )}
+                                    value={pendingInput(line, column.vendor)}
+                                    disabled={!canAct}
+                                    onFocus={(event) => {
+                                      const input = event.currentTarget
+                                      requestAnimationFrame(() => input.select())
+                                    }}
+                                    onClick={(event) => event.currentTarget.select()}
+                                    onChange={(event) => setPendingQty(line, column.vendor, event.target.value)}
+                                  />
+                                  <span>of {formatQuantity(left)} left</span>
+                                </div>
+                                {overLimit ? (
+                                  <p className="text-xs text-destructive">
+                                    Max {formatQuantity(vendorCap)} {line.unit}
+                                  </p>
+                                ) : null}
                               </div>
                               {waitingQty > 0 ? (
                                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -569,7 +583,7 @@ const RequestQuotesAward = () => {
               type="button"
               variant="outline"
               className={outlineButton}
-              disabled={!canAct || !hasPending}
+              disabled={!canAct || !hasPending || hasQtyError}
               onClick={() => setSaveOpen(true)}
             >
               {saving ? 'Saving…' : 'Save awards'}
@@ -578,7 +592,7 @@ const RequestQuotesAward = () => {
               type="button"
               variant="dark"
               className="h-8 w-full px-3.5 text-sm font-normal sm:w-auto"
-              disabled={!canAct || (!hasPending && vendorCards.every((card) => card.orders > 0))}
+              disabled={!canAct || hasQtyError || (!hasPending && vendorCards.every((card) => card.orders > 0))}
               onClick={() => void onContinueToOrders()}
             >
               {creating ? 'Creating…' : 'Continue to purchase order'}
