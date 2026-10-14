@@ -412,9 +412,9 @@ const RequestQuotesAward = () => {
                           const quote = quoteFor(line, column.vendor)
                           const awarded = savedQty(line, column.vendor)
                           const waitingQty = pendingQty(line.slug, column.vendor)
-                          const cellLeft = availableFor(line, column.vendor)
+                          const vendorCap = availableFor(line, column.vendor)
                           const unitPrice = qty(quote?.unit_price)
-                          const leftoverAfter = Math.max(0, cellLeft - waitingQty)
+                          const leftoverAfter = Math.max(0, vendorCap - waitingQty)
                           if (!quote) {
                             return <div key={column.vendor} className="px-3 py-5" />
                           }
@@ -473,7 +473,7 @@ const RequestQuotesAward = () => {
                                   onChange={(event) => setPendingQty(line, column.vendor, event.target.value)}
                                   onBlur={(event) => setPendingQty(line, column.vendor, event.target.value, true)}
                                 />
-                                <span>of {formatQuantity(cellLeft)} left</span>
+                                <span>of {formatQuantity(left)} left</span>
                               </div>
                               {waitingQty > 0 ? (
                                 <div className="mt-2 flex flex-wrap items-center gap-2">
