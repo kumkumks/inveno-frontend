@@ -41,6 +41,13 @@ export function formatQuantity(value: string | number | null | undefined) {
   return Number.isInteger(quantityValue) ? String(quantityValue) : quantityValue.toFixed(2)
 }
 
+export function formatUnitPrice(amount: string | number | null | undefined, unit?: string) {
+  if (amount === undefined || amount === null || amount === '') return '—'
+  const numeric = Number(amount)
+  const money = Number.isNaN(numeric) ? String(amount) : `US$${numeric.toFixed(2)}`
+  return unit ? `${money} / ${unit}` : money
+}
+
 export function displayNamedValue(value: NamedValue) {
   if (!value) return 'N/A'
   if (typeof value === 'string') return value || 'N/A'

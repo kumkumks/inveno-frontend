@@ -1,4 +1,5 @@
 import React from 'react'
+import { ChevronDown } from 'lucide-react'
 import Navbar from '../components/common/navbar'
 import { 
   Sidebar, 
@@ -9,8 +10,9 @@ import {
   Sheet,
   SheetContent
 } from '../components/ui/sheet'
-import { Outlet, NavLink } from 'react-router-dom'
-import { sidebarMenus } from '@/config/navigation'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { sidebarMenus, type SidebarMenu } from '@/config/navigation'
+import { cn } from '@/lib/utils'
 
 // Custom styles for the sheet to not overlap navbar and scrollbar styling
 const sheetOverlayStyles = `
@@ -38,8 +40,75 @@ const sheetOverlayStyles = `
   }
 `
 
+const navClass = (active: boolean) =>
+  `flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+    active ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+  }`
+
+const subNavClass = (active: boolean) =>
+  `flex w-full items-center rounded-md py-1.5 pr-3 pl-9 text-left text-sm transition-colors ${
+    active ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+  }`
+
+function SidebarNavItem({
+  menu,
+  pathname,
+  onNavigate,
+}: {
+  menu: SidebarMenu
+  pathname: string
+  onNavigate: () => void
+}) {
+  const hasChildren = Boolean(menu.children?.length)
+  const parentActive = menu.match ? menu.match(pathname) : false
+  const [open, setOpen] = React.useState(parentActive)
+
+  React.useEffect(() => {
+    if (parentActive) setOpen(true)
+  }, [parentActive])
+
+  if (!hasChildren) {
+    return (
+      <NavLink to={menu.href} onClick={onNavigate} className={({ isActive }) => navClass(isActive)}>
+        <menu.icon className="h-4 w-4 text-gray-400" />
+        <span className="font-normal">{menu.label}</span>
+      </NavLink>
+    )
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        className={navClass(parentActive)}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <menu.icon className="h-4 w-4 text-gray-400" />
+        <span className="flex-1 font-normal">{menu.label}</span>
+        <ChevronDown className={cn('h-4 w-4 shrink-0 text-gray-400 transition-transform', open && 'rotate-180')} />
+      </button>
+      {open
+        ? menu.children?.map((child) => (
+            <NavLink
+              key={child.key}
+              to={child.href}
+              end
+              onClick={onNavigate}
+              aria-current={child.match ? (child.match(pathname) ? 'page' : false) : undefined}
+              className={({ isActive }) => subNavClass(child.match ? child.match(pathname) : isActive)}
+            >
+              {child.label}
+            </NavLink>
+          ))
+        : null}
+    </div>
+  )
+}
+
 const DashboardLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+  const { pathname } = useLocation()
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -59,23 +128,7 @@ const DashboardLayout = () => {
         <div className='px-3 space-y-0.5'>
         {
           sidebarMenus.map((menu)=>(
-            <div key={menu.key}>
-            {/* Menu button */}
-            <NavLink
-              to={menu.href}
-              onClick={closeMobileMenu}
-              className={({ isActive }) =>
-                `flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                  isActive
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`
-              }
-            >
-              <menu.icon className='h-4 w-4 text-gray-400' />
-              <span className='font-normal'>{menu.label}</span>
-            </NavLink>
-          </div>
+            <SidebarNavItem key={menu.key} menu={menu} pathname={pathname} onNavigate={closeMobileMenu} />
           ))
         }
         </div>

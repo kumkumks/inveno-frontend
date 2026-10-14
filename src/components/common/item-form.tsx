@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,15 +17,16 @@ import { InlineStatus } from '@/components/common/inline-status'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
+import { namedEntityFormSchema, type NamedEntityForm } from '@/lib/schemas/item'
+import { SELECT_NONE } from '@/lib/schemas/purchase'
 import type { UpdateItemPayload } from '@/lib/types'
 import {
+  appendUniqueOption,
   createCategory,
-  createNamedEntity,
   createWarehouse,
   listCategories,
   listWarehouses,
 } from '@/services/items'
-import { SELECT_NONE } from '@/lib/schemas/purchase'
 
 const fieldClass =
   'h-8 w-full rounded-sm border border-gray-400 bg-white text-sm text-gray-800'
@@ -40,12 +42,8 @@ function NamedEntityDialog({
   label,
   htmlFor,
   placeholder,
-  name,
-  onNameChange,
-  error,
-  saving,
   submitLabel,
-  onSubmit,
+  onCreate,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -54,39 +52,71 @@ function NamedEntityDialog({
   label: string
   htmlFor: string
   placeholder: string
-  name: string
-  onNameChange: (value: string) => void
-  error: string
-  saving: boolean
   submitLabel: string
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onCreate: (name: string) => Promise<void>
 }) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<NamedEntityForm>({
+    resolver: zodResolver(namedEntityFormSchema),
+    defaultValues: { name: '' },
+    mode: 'onChange',
+  })
+  const error = errors.root?.message ?? ''
+
+  useEffect(() => {
+    if (!open) return
+    reset({ name: '' })
+    clearErrors()
+  }, [open, reset, clearErrors])
+
+  const close = (next: boolean) => {
+    if (isSubmitting) return
+    if (!next) reset({ name: '' })
+    onOpenChange(next)
+  }
+
+  const onSave = async (data: NamedEntityForm) => {
+    clearErrors('root')
+    try {
+      await onCreate(data.name)
+      reset({ name: '' })
+      onOpenChange(false)
+    } catch (err) {
+      setError('root', { type: 'server', message: formatApiError(err) })
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <FormField label={label} htmlFor={htmlFor} className="gap-1.5" labelClassName="text-gray-800">
+        <form onSubmit={handleSubmit(onSave)} className="flex flex-col gap-4">
+          <FormField label={label} htmlFor={htmlFor} error={errors.name?.message} className="gap-1.5" labelClassName="text-gray-800">
             <Input
               id={htmlFor}
               type="text"
               placeholder={placeholder}
               className={fieldClass}
-              value={name}
-              onChange={(event) => onNameChange(event.target.value)}
               autoFocus
+              {...register('name')}
             />
           </FormField>
           <InlineStatus error={error} />
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            <Button type="button" variant="outline" onClick={() => close(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Saving…' : submitLabel}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving…' : submitLabel}
             </Button>
           </DialogFooter>
         </form>
@@ -127,52 +157,12 @@ export function ItemForm({
   const { data: categories = [], setData: setCategories } = useAsyncResource(listCategories, [])
   const { data: warehouses = [], setData: setWarehouses } = useAsyncResource(listWarehouses, [])
   const [categoryOpen, setCategoryOpen] = useState(false)
-  const [categoryName, setCategoryName] = useState('')
-  const [categoryError, setCategoryError] = useState('')
-  const [savingCategory, setSavingCategory] = useState(false)
   const [warehouseOpen, setWarehouseOpen] = useState(false)
-  const [warehouseName, setWarehouseName] = useState('')
-  const [warehouseError, setWarehouseError] = useState('')
-  const [savingWarehouse, setSavingWarehouse] = useState(false)
   const [formError, setFormError] = useState('')
 
   const { register, handleSubmit, control, setValue, formState: { isSubmitting } } = useForm<UpdateItemPayload>({
     defaultValues,
   })
-
-  const addCategory = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    return createNamedEntity({
-      name: categoryName,
-      emptyMessage: 'Enter a category name.',
-      create: createCategory,
-      setOptions: setCategories,
-      onSelect: (slug) => setValue('category', slug),
-      setError: setCategoryError,
-      setSaving: setSavingCategory,
-      reset: () => {
-        setCategoryName('')
-        setCategoryOpen(false)
-      },
-    })
-  }
-
-  const addWarehouse = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    return createNamedEntity({
-      name: warehouseName,
-      emptyMessage: 'Enter a warehouse name.',
-      create: createWarehouse,
-      setOptions: setWarehouses,
-      onSelect: (slug) => setValue('warehouse', slug),
-      setError: setWarehouseError,
-      setSaving: setSavingWarehouse,
-      reset: () => {
-        setWarehouseName('')
-        setWarehouseOpen(false)
-      },
-    })
-  }
 
   const submit = async (data: UpdateItemPayload) => {
     setFormError('')
@@ -211,13 +201,7 @@ export function ItemForm({
             className="gap-1.5"
             labelClassName="text-gray-800"
             action={
-              <Button
-                type="button"
-                onClick={() => {
-                  setWarehouseError('')
-                  setWarehouseOpen(true)
-                }}
-              >
+              <Button type="button" onClick={() => setWarehouseOpen(true)}>
                 Add warehouse
               </Button>
             }
@@ -274,13 +258,7 @@ export function ItemForm({
             className="gap-1.5"
             labelClassName="text-gray-800"
             action={
-              <Button
-                type="button"
-                onClick={() => {
-                  setCategoryError('')
-                  setCategoryOpen(true)
-                }}
-              >
+              <Button type="button" onClick={() => setCategoryOpen(true)}>
                 Add category
               </Button>
             }
@@ -363,46 +341,34 @@ export function ItemForm({
 
       <NamedEntityDialog
         open={categoryOpen}
-        onOpenChange={(open) => {
-          setCategoryOpen(open)
-          if (!open) {
-            setCategoryName('')
-            setCategoryError('')
-          }
-        }}
+        onOpenChange={setCategoryOpen}
         title="Add category"
         description="Create a category, then use it on this item."
         label="Category name"
         htmlFor="new-category"
         placeholder="Category name"
-        name={categoryName}
-        onNameChange={setCategoryName}
-        error={categoryError}
-        saving={savingCategory}
         submitLabel="Save category"
-        onSubmit={addCategory}
+        onCreate={async (name) => {
+          const created = await createCategory(name)
+          setCategories((current) => appendUniqueOption(current ?? [], created))
+          setValue('category', created.slug)
+        }}
       />
 
       <NamedEntityDialog
         open={warehouseOpen}
-        onOpenChange={(open) => {
-          setWarehouseOpen(open)
-          if (!open) {
-            setWarehouseName('')
-            setWarehouseError('')
-          }
-        }}
+        onOpenChange={setWarehouseOpen}
         title="Add warehouse"
         description="Create a warehouse, then use it on this item."
         label="Warehouse name"
         htmlFor="new-warehouse"
         placeholder="Warehouse name"
-        name={warehouseName}
-        onNameChange={setWarehouseName}
-        error={warehouseError}
-        saving={savingWarehouse}
         submitLabel="Save warehouse"
-        onSubmit={addWarehouse}
+        onCreate={async (name) => {
+          const created = await createWarehouse(name)
+          setWarehouses((current) => appendUniqueOption(current ?? [], created))
+          setValue('warehouse', created.slug)
+        }}
       />
     </>
   )

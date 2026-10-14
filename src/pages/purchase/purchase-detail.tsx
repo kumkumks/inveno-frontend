@@ -9,6 +9,7 @@ import { StatusPill, purchaseStatusStyle, statusLabel, tableHeadClass } from '@/
 import { PageShell, PageTitle } from '@/components/common/page-shell'
 import { PermissionNotice } from '@/components/common/permission-notice'
 import { PurchaseTrailDialog } from '@/components/common/purchase-trail-dialog'
+import { StartRfqDialog } from '@/components/common/start-rfq-dialog'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { listSpaces } from '@/lib/list'
@@ -17,7 +18,12 @@ import { ConfirmDeleteDialog } from '@/components/common/confirm-delete-dialog'
 import { displayRole } from '@/lib/roles'
 import type { PurchaseExportFormat } from '@/lib/types'
 import { deletePurchaseRequest, exportPurchaseRequest } from '@/services/purchase'
-import { getPurchaseRequest, submitPurchaseRequest } from '@/services/purchases'
+import {
+  approvePurchaseRequest,
+  getPurchaseRequest,
+  getQuoteRequestForPurchase,
+  submitPurchaseRequest,
+} from '@/services/purchases'
 
 function ActionCard({
   title,
@@ -61,6 +67,11 @@ const Purchase_detail = () => {
     { enabled: Boolean(slug) },
   )
   const { data: spaces = [] } = useAsyncResource(listSpaces, [])
+  const { data: rfq } = useAsyncResource(
+    () => getQuoteRequestForPurchase(slug as string),
+    [slug, request?.status],
+    { enabled: Boolean(slug) && request?.status === 'approved' },
+  )
   const error = slug ? loadError : 'Purchase request not found'
   const permissionDenied = Boolean(error && isPermissionError(error))
   const spaceName = spaces.find((space) => space.slug === request?.space)?.name
@@ -72,6 +83,7 @@ const Purchase_detail = () => {
     .join(', ')
   const lines = request?.lines ?? []
   const showRevisionBanner = request?.status === 'revision_requested'
+  const hasActiveRfq = Boolean(rfq && rfq.status !== 'cancelled')
 
   const [exporting, setExporting] = useState<PurchaseExportFormat | null>(null)
   const [exportError, setExportError] = useState('')
@@ -79,6 +91,9 @@ const Purchase_detail = () => {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [approving, setApproving] = useState(false)
+  const [approveError, setApproveError] = useState('')
+  const [rfqOpen, setRfqOpen] = useState(false)
   const onExport = async (format: PurchaseExportFormat) => {
     if (!slug || exporting) return
     setExporting(format)
@@ -102,6 +117,19 @@ const Purchase_detail = () => {
       setSubmitError(formatApiError(err))
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const onApprove = async () => {
+    if (!slug || request?.status !== 'submitted' || approving) return
+    setApproving(true)
+    setApproveError('')
+    try {
+      setData(await approvePurchaseRequest(slug))
+    } catch (err) {
+      setApproveError(formatApiError(err))
+    } finally {
+      setApproving(false)
     }
   }
 
@@ -195,9 +223,20 @@ const Purchase_detail = () => {
             {
               request?.status === 'submitted' && (
             <ActionCard title="Operation actions" description="Select the next step for this request." tone="blue">
-              <Button type="button" variant="dark" className="h-10 rounded-lg px-4">
-                Approve
+              <Button
+                type="button"
+                variant="dark"
+                className="h-10 rounded-lg px-4"
+                disabled={approving}
+                onClick={() => void onApprove()}
+              >
+                {approving ? 'Approving…' : 'Approve'}
               </Button>
+              {approveError && isPermissionError(approveError) ? (
+                <PermissionNotice action="cannot approve this purchase request" />
+              ) : (
+                <InlineStatus error={approveError} className="w-full" />
+              )}
               <Button type="button"  className="h-10 rounded-lg px-4 bg-transparent border-blue-200 hover:bg-blue-100 hover:text-gray-900">
                 Request revision
               </Button>
@@ -213,8 +252,17 @@ const Purchase_detail = () => {
               description="Select the next step for this request."
               actionsClassName="rounded-xl bg-sky-50 p-1"
             >
-              <Button type="button" variant="dark" className="h-10 w-full rounded-lg">
-                Request for Quote
+              <Button
+                type="button"
+                variant="dark"
+                className="h-10 w-full rounded-lg"
+                onClick={() =>
+                  hasActiveRfq
+                    ? navigate(`/purchase-requests/${slug}/quotes`)
+                    : setRfqOpen(true)
+                }
+              >
+                {hasActiveRfq ? 'View quote' : 'Request for Quote'}
               </Button>
             </ActionCard>
           )}
@@ -300,6 +348,12 @@ const Purchase_detail = () => {
         </div>
       )}
 
+      <StartRfqDialog
+        open={rfqOpen}
+        onOpenChange={setRfqOpen}
+        purchaseSlug={slug ?? ''}
+        title={request?.title || 'Purchase request'}
+      />
       <PurchaseTrailDialog
         open={trailOpen}
         onOpenChange={setTrailOpen}
