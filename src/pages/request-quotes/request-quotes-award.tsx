@@ -10,10 +10,10 @@ import { Button } from '@/components/ui/button'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { formatQuantity } from '@/lib/format'
-import type { PurchaseOrder, PurchaseRequest, QuoteLine, QuoteRequest } from '@/lib/types'
+import type { PurchaseRequest, QuoteLine, QuoteRequest } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
-  createQuoteRequestPurchaseOrder,
+  clearQuoteRequestAward,
   exportQuoteRequest,
   getPurchaseRequest,
   getQuoteRequestForPurchase,
@@ -72,8 +72,16 @@ function cheapestVendor(line: QuoteLine) {
   return priced[0]?.vendor ?? ''
 }
 
+const ITEM_COL = 'minmax(200px, 240px)'
+const VENDOR_COL = 'minmax(200px, 1fr)'
+
 const gridCols = (count: number) =>
-  ({ gridTemplateColumns: `minmax(160px,1.1fr) repeat(${Math.max(count, 1)}, minmax(0,1fr))` }) as const
+  ({
+    gridTemplateColumns: `${ITEM_COL} repeat(${Math.max(count, 1)}, ${VENDOR_COL})`,
+  }) as const
+
+const cellPad = 'px-4 py-5 sm:px-5'
+const headerPad = 'px-4 py-3.5 sm:px-5'
 
 const RequestQuotesAward = () => {
   const { slug } = useParams()
@@ -91,16 +99,17 @@ const RequestQuotesAward = () => {
     loading: rfqLoading,
   } = useAsyncResource(() => getQuoteRequestForPurchase(slug as string), [slug], { enabled: Boolean(slug) })
   const { data: catalog = [] } = useAsyncResource(listVendors, [])
-  const { data: orders = [], setData: setOrders } = useAsyncResource(listPurchaseOrders, [])
+  const { data: orders = [] } = useAsyncResource(listPurchaseOrders, [])
   const [pending, setPending] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [creating, setCreating] = useState(false)
+  const [clearing, setClearing] = useState('')
   const [resetOpen, setResetOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [actionError, setActionError] = useState('')
 
   const quotesPath = `/purchase-requests/${slug}/quotes`
+  const ordersPath = `/purchase-requests/${slug}/quotes/orders`
   const vendorName = (vendorSlug: string) => catalog.find((item) => item.slug === vendorSlug)?.name ?? vendorSlug
   const loadError = slug ? purchaseError : 'Purchase request not found'
   const permissionDenied = Boolean(
@@ -180,7 +189,43 @@ const RequestQuotesAward = () => {
   const pendingEntries = Object.entries(pending).filter(([, value]) => qty(value) > 0)
   const hasPending = pendingEntries.length > 0
   const hasQtyError = lines.some((line) => columns.some((column) => qtyOverLimit(line, column.vendor)))
-  const canAct = Boolean(rfq) && canAward && !saving && !creating && !resetOpen && !saveOpen
+  const canAct = Boolean(rfq) && canAward && !saving && !clearing && !resetOpen && !saveOpen
+
+  const pendingAwards = pendingEntries.flatMap(([key, quantity]) => {
+    const [lineSlug, vendor] = key.split('::')
+    const line = lines.find((item) => item.slug === lineSlug)
+    if (!line || !vendor) return []
+    const amount = qty(quantity)
+    const unitPrice = qty(quoteFor(line, vendor)?.unit_price)
+    return [
+      {
+        key,
+        line,
+        vendor,
+        amount,
+        total: amount * unitPrice,
+      },
+    ]
+  })
+
+  const saveDescription = (() => {
+    const notes = lines.flatMap((line) => {
+      const waiting = pendingOnLine(line)
+      if (waiting <= 0) return []
+      const after = totalSaved(line) + waiting
+      const requested = qty(line.quantity)
+      if (after + 1e-9 < requested) return []
+      const partners = columns
+        .filter((column) => savedQty(line, column.vendor) + pendingQty(line.slug, column.vendor) > 0)
+        .map((column) => vendorName(column.vendor))
+      const split = partners.length > 1 ? `, split with ${partners.join(', ')}` : ''
+      return [
+        `This completes ${line.description} (${formatQuantity(after)} of ${formatQuantity(requested)} ${line.unit}${split}).`,
+      ]
+    })
+    const tail = 'Each vendor with awarded items gets its own purchase order. Saved quantities are locked.'
+    return notes.length ? `${notes.join(' ')} ${tail}` : tail
+  })()
 
   const savedTotal = lines.reduce((sum, line) => {
     return (
@@ -261,6 +306,21 @@ const RequestQuotesAward = () => {
     await refresh(saved)
   }
 
+  const onClearAward = async (line: QuoteLine, vendor: string) => {
+    if (!rfq || clearing) return
+    const key = pendingKey(line.slug, vendor)
+    setClearing(key)
+    setActionError('')
+    try {
+      const saved = await clearQuoteRequestAward(rfq.slug, line.slug, vendor)
+      await refresh(saved)
+    } catch (err) {
+      setActionError(formatApiError(err))
+    } finally {
+      setClearing('')
+    }
+  }
+
   const onSaveAwards = async () => {
     if (!rfq || !hasPending || saving) return false
     setSaving(true)
@@ -273,35 +333,6 @@ const RequestQuotesAward = () => {
       return false
     } finally {
       setSaving(false)
-    }
-  }
-
-  const onContinueToOrders = async () => {
-    if (!rfq || creating) return
-    const vendorsForOrder = [
-      ...new Set([
-        ...lines.flatMap((line) => columns.filter((item) => savedQty(line, item.vendor) > 0).map((item) => item.vendor)),
-        ...pendingEntries.map(([key]) => key.split('::')[1] ?? ''),
-      ]),
-    ].filter(Boolean)
-    if (hasPending) {
-      const saved = await onSaveAwards()
-      if (!saved) return
-    }
-    const missing = vendorsForOrder.filter((vendor) => !relatedOrders.some((order) => order.vendor === vendor))
-    if (!missing.length) return
-    setCreating(true)
-    setActionError('')
-    try {
-      const created: PurchaseOrder[] = []
-      for (const vendor of missing) {
-        created.push(await createQuoteRequestPurchaseOrder(rfq.slug, vendor))
-      }
-      setOrders((current) => [...created, ...(current ?? [])])
-    } catch (err) {
-      setActionError(formatApiError(err))
-    } finally {
-      setCreating(false)
     }
   }
 
@@ -365,12 +396,28 @@ const RequestQuotesAward = () => {
                 </p>
               </div>
 
-              <div className="-mx-4 overflow-x-auto sm:mx-0">
-                <div className="min-w-[640px] sm:min-w-0">
+              <div className="-mx-4 overflow-x-auto overscroll-x-contain pb-1 sm:-mx-0">
+                <div
+                  className="inline-block min-w-full align-top"
+                  style={{
+                    minWidth: `calc(240px + ${Math.max(columnCount, 1)} * 200px)`,
+                  }}
+                >
                   <div className="grid border-b border-gray-200" style={gridCols(columnCount)}>
-                    <div className="px-3 py-3 text-sm text-gray-400">Item</div>
+                    <div
+                      className={cn(
+                        headerPad,
+                        'sticky left-0 z-10 border-r border-gray-100 bg-white text-sm font-medium text-gray-400',
+                      )}
+                    >
+                      Item
+                    </div>
                     {columns.map((item) => (
-                      <div key={item.vendor} className="px-3 py-3 text-sm text-gray-400">
+                      <div
+                        key={item.vendor}
+                        title={vendorName(item.vendor)}
+                        className={cn(headerPad, 'truncate border-l border-gray-50 text-sm font-medium text-gray-400')}
+                      >
                         {vendorName(item.vendor)}
                       </div>
                     ))}
@@ -389,12 +436,17 @@ const RequestQuotesAward = () => {
                         className="grid items-stretch border-b border-gray-100 last:border-b-0"
                         style={gridCols(columnCount)}
                       >
-                        <div className="px-3 py-5">
+                        <div
+                          className={cn(
+                            cellPad,
+                            'sticky left-0 z-10 border-r border-gray-100 bg-white',
+                          )}
+                        >
                           <p className="text-sm font-semibold text-neutral-900">{line.description}</p>
                           <p className="mt-1 text-xs text-gray-400">
                             {formatQuantity(line.quantity)} {line.unit} requested
                           </p>
-                          <div className="mt-3 flex h-1.5 max-w-56 overflow-hidden rounded-full bg-gray-200">
+                          <div className="mt-3 flex h-1.5 max-w-44 overflow-hidden rounded-full bg-gray-200">
                             <span
                               className="h-full bg-neutral-900"
                               style={{ width: `${requested ? (saved / requested) * 100 : 0}%` }}
@@ -404,8 +456,9 @@ const RequestQuotesAward = () => {
                               style={{ width: `${requested ? (waiting / requested) * 100 : 0}%` }}
                             />
                           </div>
-                          <p className="mt-1.5 text-xs text-gray-400">
-                            {formatQuantity(saved)} saved · {formatQuantity(waiting)} pending · {formatQuantity(left)} left
+                          <p className="mt-1.5 text-xs leading-relaxed text-gray-400">
+                            {formatQuantity(saved)} saved · {formatQuantity(waiting)} pending ·{' '}
+                            {formatQuantity(left)} left
                           </p>
                         </div>
 
@@ -417,24 +470,38 @@ const RequestQuotesAward = () => {
                           const unitPrice = qty(quote?.unit_price)
                           const leftoverAfter = Math.max(0, vendorCap - waitingQty)
                           const overLimit = qtyOverLimit(line, column.vendor)
+                          const vendorCell = cn(cellPad, 'border-l border-gray-50')
                           if (!quote) {
-                            return <div key={column.vendor} className="px-3 py-5" />
+                            return <div key={column.vendor} className={vendorCell} />
                           }
                           if (awarded > 0) {
+                            const clearKey = pendingKey(line.slug, column.vendor)
+                            const isClearing = clearing === clearKey
                             return (
-                              <div key={column.vendor} className="bg-[#e8e8e8] px-3 py-5">
-                                <span className="inline-flex items-center rounded-full bg-neutral-800 px-2.5 py-1 text-xs font-medium text-white">
+                              <div key={column.vendor} className={cn(vendorCell, 'bg-[#e8e8e8]')}>
+                                <span className="inline-flex max-w-full items-center rounded-full bg-neutral-800 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-white">
                                   {formatQuantity(awarded)} {line.unit} awarded
                                 </span>
-                                <p className="mt-2 text-sm text-gray-500">
-                                  {money(unitPrice)} / {line.unit} · <span className="font-medium text-neutral-800">{money(awarded * unitPrice)}</span>
+                                <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                                  {money(unitPrice)} / {line.unit}
                                 </p>
+                                <p className="mt-0.5 text-sm font-medium text-neutral-800">{money(awarded * unitPrice)}</p>
+                                {canAward ? (
+                                  <button
+                                    type="button"
+                                    className="mt-3 text-sm text-gray-500 underline disabled:opacity-50"
+                                    disabled={!canAct || isClearing}
+                                    onClick={() => void onClearAward(line, column.vendor)}
+                                  >
+                                    {isClearing ? 'Clearing…' : 'Clear choice'}
+                                  </button>
+                                ) : null}
                               </div>
                             )
                           }
                           if (lineComplete) {
                             return (
-                              <div key={column.vendor} className="px-3 py-5">
+                              <div key={column.vendor} className={vendorCell}>
                                 <p className="text-sm text-neutral-800">
                                   {money(unitPrice)} / {line.unit}
                                 </p>
@@ -443,23 +510,23 @@ const RequestQuotesAward = () => {
                             )
                           }
                           return (
-                            <div key={column.vendor} className="px-3 py-5">
+                            <div key={column.vendor} className={vendorCell}>
                               {waitingQty > 0 ? (
-                                <p className="text-sm text-neutral-800">{line.description}</p>
+                                <p className="text-sm font-medium text-neutral-800">{line.description}</p>
                               ) : (
-                                <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex flex-col gap-1.5">
                                   <p className="text-sm text-neutral-800">
                                     {money(unitPrice)} / {line.unit}
                                   </p>
                                   {lowest === column.vendor ? (
-                                    <span className="inline-flex items-center rounded-full bg-[#e7f6e4] px-2 py-0.5 text-[11px] font-medium text-[#3d9a4a]">
+                                    <span className="inline-flex w-fit items-center rounded-full bg-[#e7f6e4] px-2 py-0.5 text-[11px] font-medium text-[#3d9a4a]">
                                       Lowest
                                     </span>
                                   ) : null}
                                 </div>
                               )}
-                              <div className="mt-2 flex flex-col gap-1">
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <div className="mt-3 flex flex-col gap-1.5">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500">
                                   <input
                                     type="text"
                                     inputMode="decimal"
@@ -467,7 +534,7 @@ const RequestQuotesAward = () => {
                                     placeholder="0"
                                     aria-invalid={overLimit || undefined}
                                     className={cn(
-                                      'h-8 w-16 rounded-md border bg-transparent px-2 text-center text-sm outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
+                                      'h-8 w-16 shrink-0 rounded-md border bg-white px-2 text-center text-sm outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
                                       overLimit
                                         ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20'
                                         : 'border-gray-300 focus-visible:border-ring focus-visible:ring-ring/50',
@@ -481,7 +548,7 @@ const RequestQuotesAward = () => {
                                     onClick={(event) => event.currentTarget.select()}
                                     onChange={(event) => setPendingQty(line, column.vendor, event.target.value)}
                                   />
-                                  <span>of {formatQuantity(left)} left</span>
+                                  <span className="whitespace-nowrap">of {formatQuantity(left)} left</span>
                                 </div>
                                 {overLimit ? (
                                   <p className="text-xs text-destructive">
@@ -490,7 +557,7 @@ const RequestQuotesAward = () => {
                                 ) : null}
                               </div>
                               {waitingQty > 0 ? (
-                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
                                   <span className="inline-flex items-center rounded-md bg-[#fff1c2] px-2 py-1 text-xs text-[#c4a035]">
                                     Pending {money(waitingQty * unitPrice)}
                                   </span>
@@ -506,7 +573,7 @@ const RequestQuotesAward = () => {
                               ) : leftoverAfter > 0 && canAct ? (
                                 <button
                                   type="button"
-                                  className="mt-2 text-sm text-gray-400 hover:text-neutral-800"
+                                  className="mt-3 text-sm text-gray-400 hover:text-neutral-800"
                                   onClick={() => fillRemaining(line, column.vendor)}
                                 >
                                   Fill remaining ({formatQuantity(leftoverAfter)})
@@ -553,7 +620,7 @@ const RequestQuotesAward = () => {
                 <button
                   type="button"
                   className="font-medium text-neutral-900 underline disabled:opacity-50"
-                  disabled={!rfq || saving || creating}
+                  disabled={!rfq || saving}
                   onClick={() => setResetOpen(true)}
                 >
                   Reset the RFQ
@@ -592,10 +659,9 @@ const RequestQuotesAward = () => {
               type="button"
               variant="dark"
               className="h-8 w-full px-3.5 text-sm font-normal sm:w-auto"
-              disabled={!canAct || hasQtyError || (!hasPending && vendorCards.every((card) => card.orders > 0))}
-              onClick={() => void onContinueToOrders()}
+              onClick={() => navigate(ordersPath)}
             >
-              {creating ? 'Creating…' : 'Continue to purchase order'}
+              Continue to purchase order
             </Button>
           </div>
         </div>
@@ -606,15 +672,38 @@ const RequestQuotesAward = () => {
           <ConfirmDeleteDialog
             open={saveOpen}
             onOpenChange={setSaveOpen}
-            title="Save awards"
-            description="Are you sure you want to save these awards? Saved quantities are locked until the RFQ is reset."
+            title="Save these awards?"
+            description={saveDescription}
             permissionAction="cannot update this award"
-            confirmLabel="Save"
+            confirmLabel="Save awards"
             pendingLabel="Saving…"
             confirmVariant="dark"
+            contentClassName="max-w-lg gap-5"
             onConfirm={saveAwards}
             onDeleted={() => setActionError('')}
-          />
+          >
+            <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+              {pendingAwards.map((row) => (
+                <div
+                  key={row.key}
+                  className="flex flex-col gap-1 rounded-lg border border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                >
+                  <p className="min-w-0 text-sm text-neutral-800">
+                    <span className="wrap-break-word">{row.line.description}</span>
+                    <span className="text-gray-400"> · </span>
+                    <span className="whitespace-nowrap">
+                      {formatQuantity(row.amount)} {row.line.unit}
+                    </span>
+                  </p>
+                  <p className="min-w-0 text-sm font-semibold text-neutral-900 sm:text-right">
+                    <span className="wrap-break-word">{vendorName(row.vendor)}</span>
+                    <span className="text-neutral-900"> · </span>
+                    <span className="whitespace-nowrap">{money(row.total)}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          </ConfirmDeleteDialog>
           <ConfirmDeleteDialog
             open={resetOpen}
             onOpenChange={setResetOpen}

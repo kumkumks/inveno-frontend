@@ -99,6 +99,14 @@ export async function selectQuoteRequestLines(
   return data
 }
 
+export async function clearQuoteRequestAward(rfqSlug: string, line: string, vendor: string) {
+  const { data } = await api.post<QuoteRequest>(`/api/orgs/rfqs/${rfqSlug}/clear-award/`, {
+    line,
+    vendor,
+  })
+  return data
+}
+
 export async function requestQuoteRequestRevision(rfqSlug: string) {
   const { data } = await api.post<QuoteRequest>(`/api/orgs/rfqs/${rfqSlug}/request-revision/`)
   return data
