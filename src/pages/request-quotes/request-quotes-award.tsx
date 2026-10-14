@@ -191,6 +191,42 @@ const RequestQuotesAward = () => {
   const hasQtyError = lines.some((line) => columns.some((column) => qtyOverLimit(line, column.vendor)))
   const canAct = Boolean(rfq) && canAward && !saving && !clearing && !resetOpen && !saveOpen
 
+  const pendingAwards = pendingEntries.flatMap(([key, quantity]) => {
+    const [lineSlug, vendor] = key.split('::')
+    const line = lines.find((item) => item.slug === lineSlug)
+    if (!line || !vendor) return []
+    const amount = qty(quantity)
+    const unitPrice = qty(quoteFor(line, vendor)?.unit_price)
+    return [
+      {
+        key,
+        line,
+        vendor,
+        amount,
+        total: amount * unitPrice,
+      },
+    ]
+  })
+
+  const saveDescription = (() => {
+    const notes = lines.flatMap((line) => {
+      const waiting = pendingOnLine(line)
+      if (waiting <= 0) return []
+      const after = totalSaved(line) + waiting
+      const requested = qty(line.quantity)
+      if (after + 1e-9 < requested) return []
+      const partners = columns
+        .filter((column) => savedQty(line, column.vendor) + pendingQty(line.slug, column.vendor) > 0)
+        .map((column) => vendorName(column.vendor))
+      const split = partners.length > 1 ? `, split with ${partners.join(', ')}` : ''
+      return [
+        `This completes ${line.description} (${formatQuantity(after)} of ${formatQuantity(requested)} ${line.unit}${split}).`,
+      ]
+    })
+    const tail = 'Each vendor with awarded items gets its own purchase order. Saved quantities are locked.'
+    return notes.length ? `${notes.join(' ')} ${tail}` : tail
+  })()
+
   const savedTotal = lines.reduce((sum, line) => {
     return (
       sum +
@@ -636,15 +672,38 @@ const RequestQuotesAward = () => {
           <ConfirmDeleteDialog
             open={saveOpen}
             onOpenChange={setSaveOpen}
-            title="Save awards"
-            description="Are you sure you want to save these awards? Saved quantities are locked until the RFQ is reset."
+            title="Save these awards?"
+            description={saveDescription}
             permissionAction="cannot update this award"
-            confirmLabel="Save"
+            confirmLabel="Save awards"
             pendingLabel="Saving…"
             confirmVariant="dark"
+            contentClassName="max-w-lg gap-5"
             onConfirm={saveAwards}
             onDeleted={() => setActionError('')}
-          />
+          >
+            <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+              {pendingAwards.map((row) => (
+                <div
+                  key={row.key}
+                  className="flex flex-col gap-1 rounded-lg border border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                >
+                  <p className="min-w-0 text-sm text-neutral-800">
+                    <span className="wrap-break-word">{row.line.description}</span>
+                    <span className="text-gray-400"> · </span>
+                    <span className="whitespace-nowrap">
+                      {formatQuantity(row.amount)} {row.line.unit}
+                    </span>
+                  </p>
+                  <p className="min-w-0 text-sm font-semibold text-neutral-900 sm:text-right">
+                    <span className="wrap-break-word">{vendorName(row.vendor)}</span>
+                    <span className="text-neutral-900"> · </span>
+                    <span className="whitespace-nowrap">{money(row.total)}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          </ConfirmDeleteDialog>
           <ConfirmDeleteDialog
             open={resetOpen}
             onOpenChange={setResetOpen}

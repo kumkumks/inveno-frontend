@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import type { VariantProps } from 'class-variance-authority'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -27,6 +27,7 @@ export function ConfirmDeleteDialog({
   confirmVariant = 'destructive',
   overlayClassName,
   contentClassName,
+  children,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -40,6 +41,7 @@ export function ConfirmDeleteDialog({
   confirmVariant?: VariantProps<typeof buttonVariants>['variant']
   overlayClassName?: string
   contentClassName?: string
+  children?: ReactNode
 }) {
   const {
     handleSubmit,
@@ -81,8 +83,9 @@ export function ConfirmDeleteDialog({
         <form className="flex flex-col gap-4" onSubmit={handleSubmit(confirmDelete)}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
+          {children}
+          <DialogDescription>{description}</DialogDescription>
           {error && isPermissionError(error) && <PermissionNotice action={permissionAction} />}
           {error && !isPermissionError(error) && <InlineStatus error={error} />}
           <DialogFooter>
