@@ -110,6 +110,11 @@ export type ItemActivity = {
   remarks: string
 }
 
+export type QuoteLineAward = {
+  vendor: string
+  quantity?: string | number
+}
+
 export type PurchaseStatus =
   | 'draft'
   | 'submitted'
@@ -134,6 +139,8 @@ export type PurchaseStatus =
       unit: string
       item?: string | null
       awarded_vendor?: string | null
+      awards?: QuoteLineAward[]
+      quantity_remaining?: string | number
     }[]
   }
 
@@ -200,11 +207,6 @@ export type QuoteVendorStatus = 'invited' | 'quoted' | 'rejected' | 'awarded'
 export type QuotePrice = {
   vendor: string
   unit_price: string | number
-}
-
-export type QuoteLineAward = {
-  vendor: string
-  quantity?: string | number
 }
 
 export type QuoteLine = {

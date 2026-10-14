@@ -91,11 +91,16 @@ export async function recordVendorQuote(rfqSlug: string, payload: RecordQuotePay
 
 export async function selectQuoteRequestLines(
   rfqSlug: string,
-  selections: { line: string; vendor: string }[],
+  selections: { line: string; vendor: string; quantity?: string }[],
 ) {
   const { data } = await api.post<QuoteRequest>(`/api/orgs/rfqs/${rfqSlug}/select-lines/`, {
     selections,
   })
+  return data
+}
+
+export async function requestQuoteRequestRevision(rfqSlug: string) {
+  const { data } = await api.post<QuoteRequest>(`/api/orgs/rfqs/${rfqSlug}/request-revision/`)
   return data
 }
 

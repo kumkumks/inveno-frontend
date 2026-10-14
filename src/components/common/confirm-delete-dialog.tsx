@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { Button } from '@/components/ui/button'
+import type { VariantProps } from 'class-variance-authority'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ export function ConfirmDeleteDialog({
   onDeleted,
   confirmLabel = 'Delete',
   pendingLabel = 'Deleting…',
+  confirmVariant = 'destructive',
   overlayClassName,
   contentClassName,
 }: {
@@ -35,6 +37,7 @@ export function ConfirmDeleteDialog({
   onDeleted: () => void
   confirmLabel?: string
   pendingLabel?: string
+  confirmVariant?: VariantProps<typeof buttonVariants>['variant']
   overlayClassName?: string
   contentClassName?: string
 }) {
@@ -86,7 +89,7 @@ export function ConfirmDeleteDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+            <Button type="submit" variant={confirmVariant} disabled={isSubmitting}>
               {isSubmitting ? pendingLabel : confirmLabel}
             </Button>
           </DialogFooter>

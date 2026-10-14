@@ -22,8 +22,8 @@ export function QuotesStepper({ current }: { current: number }) {
           <li key={step.n} className="flex shrink-0 items-center gap-2">
             <span
               className={cn(
-                'flex size-6 items-center justify-center rounded-md text-xs font-medium',
-                active ? 'bg-neutral-900 text-white' : 'bg-gray-100 text-gray-500',
+                'flex size-6 items-center justify-center rounded-full text-xs font-medium',
+                active ? 'bg-neutral-900 text-white' : 'bg-gray-100 text-gray-400',
               )}
             >
               {step.n}
