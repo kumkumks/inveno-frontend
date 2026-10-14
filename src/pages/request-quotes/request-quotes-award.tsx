@@ -72,8 +72,16 @@ function cheapestVendor(line: QuoteLine) {
   return priced[0]?.vendor ?? ''
 }
 
+const ITEM_COL = 'minmax(200px, 240px)'
+const VENDOR_COL = 'minmax(200px, 1fr)'
+
 const gridCols = (count: number) =>
-  ({ gridTemplateColumns: `minmax(160px,1.1fr) repeat(${Math.max(count, 1)}, minmax(0,1fr))` }) as const
+  ({
+    gridTemplateColumns: `${ITEM_COL} repeat(${Math.max(count, 1)}, ${VENDOR_COL})`,
+  }) as const
+
+const cellPad = 'px-4 py-5 sm:px-5'
+const headerPad = 'px-4 py-3.5 sm:px-5'
 
 const RequestQuotesAward = () => {
   const { slug } = useParams()
@@ -352,12 +360,28 @@ const RequestQuotesAward = () => {
                 </p>
               </div>
 
-              <div className="-mx-4 overflow-x-auto sm:mx-0">
-                <div className="min-w-[640px] sm:min-w-0">
+              <div className="-mx-4 overflow-x-auto overscroll-x-contain pb-1 sm:-mx-0">
+                <div
+                  className="inline-block min-w-full align-top"
+                  style={{
+                    minWidth: `calc(240px + ${Math.max(columnCount, 1)} * 200px)`,
+                  }}
+                >
                   <div className="grid border-b border-gray-200" style={gridCols(columnCount)}>
-                    <div className="px-3 py-3 text-sm text-gray-400">Item</div>
+                    <div
+                      className={cn(
+                        headerPad,
+                        'sticky left-0 z-10 border-r border-gray-100 bg-white text-sm font-medium text-gray-400',
+                      )}
+                    >
+                      Item
+                    </div>
                     {columns.map((item) => (
-                      <div key={item.vendor} className="px-3 py-3 text-sm text-gray-400">
+                      <div
+                        key={item.vendor}
+                        title={vendorName(item.vendor)}
+                        className={cn(headerPad, 'truncate border-l border-gray-50 text-sm font-medium text-gray-400')}
+                      >
                         {vendorName(item.vendor)}
                       </div>
                     ))}
@@ -376,12 +400,17 @@ const RequestQuotesAward = () => {
                         className="grid items-stretch border-b border-gray-100 last:border-b-0"
                         style={gridCols(columnCount)}
                       >
-                        <div className="px-3 py-5">
+                        <div
+                          className={cn(
+                            cellPad,
+                            'sticky left-0 z-10 border-r border-gray-100 bg-white',
+                          )}
+                        >
                           <p className="text-sm font-semibold text-neutral-900">{line.description}</p>
                           <p className="mt-1 text-xs text-gray-400">
                             {formatQuantity(line.quantity)} {line.unit} requested
                           </p>
-                          <div className="mt-3 flex h-1.5 max-w-56 overflow-hidden rounded-full bg-gray-200">
+                          <div className="mt-3 flex h-1.5 max-w-44 overflow-hidden rounded-full bg-gray-200">
                             <span
                               className="h-full bg-neutral-900"
                               style={{ width: `${requested ? (saved / requested) * 100 : 0}%` }}
@@ -391,8 +420,9 @@ const RequestQuotesAward = () => {
                               style={{ width: `${requested ? (waiting / requested) * 100 : 0}%` }}
                             />
                           </div>
-                          <p className="mt-1.5 text-xs text-gray-400">
-                            {formatQuantity(saved)} saved · {formatQuantity(waiting)} pending · {formatQuantity(left)} left
+                          <p className="mt-1.5 text-xs leading-relaxed text-gray-400">
+                            {formatQuantity(saved)} saved · {formatQuantity(waiting)} pending ·{' '}
+                            {formatQuantity(left)} left
                           </p>
                         </div>
 
@@ -404,25 +434,26 @@ const RequestQuotesAward = () => {
                           const unitPrice = qty(quote?.unit_price)
                           const leftoverAfter = Math.max(0, vendorCap - waitingQty)
                           const overLimit = qtyOverLimit(line, column.vendor)
+                          const vendorCell = cn(cellPad, 'border-l border-gray-50')
                           if (!quote) {
-                            return <div key={column.vendor} className="px-3 py-5" />
+                            return <div key={column.vendor} className={vendorCell} />
                           }
                           if (awarded > 0) {
                             const clearKey = pendingKey(line.slug, column.vendor)
                             const isClearing = clearing === clearKey
                             return (
-                              <div key={column.vendor} className="bg-[#e8e8e8] px-3 py-5">
-                                <span className="inline-flex items-center rounded-full bg-neutral-800 px-2.5 py-1 text-xs font-medium text-white">
+                              <div key={column.vendor} className={cn(vendorCell, 'bg-[#e8e8e8]')}>
+                                <span className="inline-flex max-w-full items-center rounded-full bg-neutral-800 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-white">
                                   {formatQuantity(awarded)} {line.unit} awarded
                                 </span>
-                                <p className="mt-2 text-sm text-gray-500">
-                                  {money(unitPrice)} / {line.unit} ·{' '}
-                                  <span className="font-medium text-neutral-800">{money(awarded * unitPrice)}</span>
+                                <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                                  {money(unitPrice)} / {line.unit}
                                 </p>
+                                <p className="mt-0.5 text-sm font-medium text-neutral-800">{money(awarded * unitPrice)}</p>
                                 {canAward ? (
                                   <button
                                     type="button"
-                                    className="mt-2 text-sm text-gray-500 underline disabled:opacity-50"
+                                    className="mt-3 text-sm text-gray-500 underline disabled:opacity-50"
                                     disabled={!canAct || isClearing}
                                     onClick={() => void onClearAward(line, column.vendor)}
                                   >
@@ -434,7 +465,7 @@ const RequestQuotesAward = () => {
                           }
                           if (lineComplete) {
                             return (
-                              <div key={column.vendor} className="px-3 py-5">
+                              <div key={column.vendor} className={vendorCell}>
                                 <p className="text-sm text-neutral-800">
                                   {money(unitPrice)} / {line.unit}
                                 </p>
@@ -443,23 +474,23 @@ const RequestQuotesAward = () => {
                             )
                           }
                           return (
-                            <div key={column.vendor} className="px-3 py-5">
+                            <div key={column.vendor} className={vendorCell}>
                               {waitingQty > 0 ? (
-                                <p className="text-sm text-neutral-800">{line.description}</p>
+                                <p className="text-sm font-medium text-neutral-800">{line.description}</p>
                               ) : (
-                                <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex flex-col gap-1.5">
                                   <p className="text-sm text-neutral-800">
                                     {money(unitPrice)} / {line.unit}
                                   </p>
                                   {lowest === column.vendor ? (
-                                    <span className="inline-flex items-center rounded-full bg-[#e7f6e4] px-2 py-0.5 text-[11px] font-medium text-[#3d9a4a]">
+                                    <span className="inline-flex w-fit items-center rounded-full bg-[#e7f6e4] px-2 py-0.5 text-[11px] font-medium text-[#3d9a4a]">
                                       Lowest
                                     </span>
                                   ) : null}
                                 </div>
                               )}
-                              <div className="mt-2 flex flex-col gap-1">
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <div className="mt-3 flex flex-col gap-1.5">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500">
                                   <input
                                     type="text"
                                     inputMode="decimal"
@@ -467,7 +498,7 @@ const RequestQuotesAward = () => {
                                     placeholder="0"
                                     aria-invalid={overLimit || undefined}
                                     className={cn(
-                                      'h-8 w-16 rounded-md border bg-transparent px-2 text-center text-sm outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
+                                      'h-8 w-16 shrink-0 rounded-md border bg-white px-2 text-center text-sm outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
                                       overLimit
                                         ? 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20'
                                         : 'border-gray-300 focus-visible:border-ring focus-visible:ring-ring/50',
@@ -481,7 +512,7 @@ const RequestQuotesAward = () => {
                                     onClick={(event) => event.currentTarget.select()}
                                     onChange={(event) => setPendingQty(line, column.vendor, event.target.value)}
                                   />
-                                  <span>of {formatQuantity(left)} left</span>
+                                  <span className="whitespace-nowrap">of {formatQuantity(left)} left</span>
                                 </div>
                                 {overLimit ? (
                                   <p className="text-xs text-destructive">
@@ -490,7 +521,7 @@ const RequestQuotesAward = () => {
                                 ) : null}
                               </div>
                               {waitingQty > 0 ? (
-                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
                                   <span className="inline-flex items-center rounded-md bg-[#fff1c2] px-2 py-1 text-xs text-[#c4a035]">
                                     Pending {money(waitingQty * unitPrice)}
                                   </span>
@@ -506,7 +537,7 @@ const RequestQuotesAward = () => {
                               ) : leftoverAfter > 0 && canAct ? (
                                 <button
                                   type="button"
-                                  className="mt-2 text-sm text-gray-400 hover:text-neutral-800"
+                                  className="mt-3 text-sm text-gray-400 hover:text-neutral-800"
                                   onClick={() => fillRemaining(line, column.vendor)}
                                 >
                                   Fill remaining ({formatQuantity(leftoverAfter)})
