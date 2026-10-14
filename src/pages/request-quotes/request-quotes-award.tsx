@@ -10,10 +10,10 @@ import { Button } from '@/components/ui/button'
 import { useAsyncResource } from '@/hooks/use-async-resource'
 import { formatApiError, isPermissionError } from '@/lib/errors'
 import { formatQuantity } from '@/lib/format'
-import type { PurchaseOrder, PurchaseRequest, QuoteLine, QuoteRequest } from '@/lib/types'
+import type { PurchaseRequest, QuoteLine, QuoteRequest } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
-  createQuoteRequestPurchaseOrder,
+  clearQuoteRequestAward,
   exportQuoteRequest,
   getPurchaseRequest,
   getQuoteRequestForPurchase,
@@ -91,16 +91,17 @@ const RequestQuotesAward = () => {
     loading: rfqLoading,
   } = useAsyncResource(() => getQuoteRequestForPurchase(slug as string), [slug], { enabled: Boolean(slug) })
   const { data: catalog = [] } = useAsyncResource(listVendors, [])
-  const { data: orders = [], setData: setOrders } = useAsyncResource(listPurchaseOrders, [])
+  const { data: orders = [] } = useAsyncResource(listPurchaseOrders, [])
   const [pending, setPending] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [creating, setCreating] = useState(false)
+  const [clearing, setClearing] = useState('')
   const [resetOpen, setResetOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [actionError, setActionError] = useState('')
 
   const quotesPath = `/purchase-requests/${slug}/quotes`
+  const ordersPath = `/purchase-requests/${slug}/quotes/orders`
   const vendorName = (vendorSlug: string) => catalog.find((item) => item.slug === vendorSlug)?.name ?? vendorSlug
   const loadError = slug ? purchaseError : 'Purchase request not found'
   const permissionDenied = Boolean(
@@ -180,7 +181,7 @@ const RequestQuotesAward = () => {
   const pendingEntries = Object.entries(pending).filter(([, value]) => qty(value) > 0)
   const hasPending = pendingEntries.length > 0
   const hasQtyError = lines.some((line) => columns.some((column) => qtyOverLimit(line, column.vendor)))
-  const canAct = Boolean(rfq) && canAward && !saving && !creating && !resetOpen && !saveOpen
+  const canAct = Boolean(rfq) && canAward && !saving && !clearing && !resetOpen && !saveOpen
 
   const savedTotal = lines.reduce((sum, line) => {
     return (
@@ -261,6 +262,21 @@ const RequestQuotesAward = () => {
     await refresh(saved)
   }
 
+  const onClearAward = async (line: QuoteLine, vendor: string) => {
+    if (!rfq || clearing) return
+    const key = pendingKey(line.slug, vendor)
+    setClearing(key)
+    setActionError('')
+    try {
+      const saved = await clearQuoteRequestAward(rfq.slug, line.slug, vendor)
+      await refresh(saved)
+    } catch (err) {
+      setActionError(formatApiError(err))
+    } finally {
+      setClearing('')
+    }
+  }
+
   const onSaveAwards = async () => {
     if (!rfq || !hasPending || saving) return false
     setSaving(true)
@@ -273,35 +289,6 @@ const RequestQuotesAward = () => {
       return false
     } finally {
       setSaving(false)
-    }
-  }
-
-  const onContinueToOrders = async () => {
-    if (!rfq || creating) return
-    const vendorsForOrder = [
-      ...new Set([
-        ...lines.flatMap((line) => columns.filter((item) => savedQty(line, item.vendor) > 0).map((item) => item.vendor)),
-        ...pendingEntries.map(([key]) => key.split('::')[1] ?? ''),
-      ]),
-    ].filter(Boolean)
-    if (hasPending) {
-      const saved = await onSaveAwards()
-      if (!saved) return
-    }
-    const missing = vendorsForOrder.filter((vendor) => !relatedOrders.some((order) => order.vendor === vendor))
-    if (!missing.length) return
-    setCreating(true)
-    setActionError('')
-    try {
-      const created: PurchaseOrder[] = []
-      for (const vendor of missing) {
-        created.push(await createQuoteRequestPurchaseOrder(rfq.slug, vendor))
-      }
-      setOrders((current) => [...created, ...(current ?? [])])
-    } catch (err) {
-      setActionError(formatApiError(err))
-    } finally {
-      setCreating(false)
     }
   }
 
@@ -421,14 +408,27 @@ const RequestQuotesAward = () => {
                             return <div key={column.vendor} className="px-3 py-5" />
                           }
                           if (awarded > 0) {
+                            const clearKey = pendingKey(line.slug, column.vendor)
+                            const isClearing = clearing === clearKey
                             return (
                               <div key={column.vendor} className="bg-[#e8e8e8] px-3 py-5">
                                 <span className="inline-flex items-center rounded-full bg-neutral-800 px-2.5 py-1 text-xs font-medium text-white">
                                   {formatQuantity(awarded)} {line.unit} awarded
                                 </span>
                                 <p className="mt-2 text-sm text-gray-500">
-                                  {money(unitPrice)} / {line.unit} · <span className="font-medium text-neutral-800">{money(awarded * unitPrice)}</span>
+                                  {money(unitPrice)} / {line.unit} ·{' '}
+                                  <span className="font-medium text-neutral-800">{money(awarded * unitPrice)}</span>
                                 </p>
+                                {canAward ? (
+                                  <button
+                                    type="button"
+                                    className="mt-2 text-sm text-gray-500 underline disabled:opacity-50"
+                                    disabled={!canAct || isClearing}
+                                    onClick={() => void onClearAward(line, column.vendor)}
+                                  >
+                                    {isClearing ? 'Clearing…' : 'Clear choice'}
+                                  </button>
+                                ) : null}
                               </div>
                             )
                           }
@@ -553,7 +553,7 @@ const RequestQuotesAward = () => {
                 <button
                   type="button"
                   className="font-medium text-neutral-900 underline disabled:opacity-50"
-                  disabled={!rfq || saving || creating}
+                  disabled={!rfq || saving}
                   onClick={() => setResetOpen(true)}
                 >
                   Reset the RFQ
@@ -592,10 +592,9 @@ const RequestQuotesAward = () => {
               type="button"
               variant="dark"
               className="h-8 w-full px-3.5 text-sm font-normal sm:w-auto"
-              disabled={!canAct || hasQtyError || (!hasPending && vendorCards.every((card) => card.orders > 0))}
-              onClick={() => void onContinueToOrders()}
+              onClick={() => navigate(ordersPath)}
             >
-              {creating ? 'Creating…' : 'Continue to purchase order'}
+              Continue to purchase order
             </Button>
           </div>
         </div>
