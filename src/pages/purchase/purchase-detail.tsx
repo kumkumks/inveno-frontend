@@ -18,7 +18,12 @@ import { ConfirmDeleteDialog } from '@/components/common/confirm-delete-dialog'
 import { displayRole } from '@/lib/roles'
 import type { PurchaseExportFormat } from '@/lib/types'
 import { deletePurchaseRequest, exportPurchaseRequest } from '@/services/purchase'
-import { approvePurchaseRequest, getPurchaseRequest, submitPurchaseRequest } from '@/services/purchases'
+import {
+  approvePurchaseRequest,
+  getPurchaseRequest,
+  getQuoteRequestForPurchase,
+  submitPurchaseRequest,
+} from '@/services/purchases'
 
 function ActionCard({
   title,
@@ -62,6 +67,11 @@ const Purchase_detail = () => {
     { enabled: Boolean(slug) },
   )
   const { data: spaces = [] } = useAsyncResource(listSpaces, [])
+  const { data: rfq } = useAsyncResource(
+    () => getQuoteRequestForPurchase(slug as string),
+    [slug, request?.status],
+    { enabled: Boolean(slug) && request?.status === 'approved' },
+  )
   const error = slug ? loadError : 'Purchase request not found'
   const permissionDenied = Boolean(error && isPermissionError(error))
   const spaceName = spaces.find((space) => space.slug === request?.space)?.name
@@ -73,6 +83,7 @@ const Purchase_detail = () => {
     .join(', ')
   const lines = request?.lines ?? []
   const showRevisionBanner = request?.status === 'revision_requested'
+  const hasActiveRfq = Boolean(rfq && rfq.status !== 'cancelled')
 
   const [exporting, setExporting] = useState<PurchaseExportFormat | null>(null)
   const [exportError, setExportError] = useState('')
@@ -241,8 +252,17 @@ const Purchase_detail = () => {
               description="Select the next step for this request."
               actionsClassName="rounded-xl bg-sky-50 p-1"
             >
-              <Button type="button" variant="dark" className="h-10 w-full rounded-lg" onClick={() => setRfqOpen(true)}>
-                Request for Quote
+              <Button
+                type="button"
+                variant="dark"
+                className="h-10 w-full rounded-lg"
+                onClick={() =>
+                  hasActiveRfq
+                    ? navigate(`/purchase-requests/${slug}/quotes`)
+                    : setRfqOpen(true)
+                }
+              >
+                {hasActiveRfq ? 'View quote' : 'Request for Quote'}
               </Button>
             </ActionCard>
           )}
